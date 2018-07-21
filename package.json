@@ -1,0 +1,23 @@
+{
+  "name": "clash-of-heroes",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "parcel index.html --open",
+    "build": "parcel build index.html"
+  },
+  "author": "Theophile Gindre",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.16.3",
+    "phaser": "^2.6.2",
+    "socket.io": "^2.1.1"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
+    "babel-preset-env": "^1.7.0",
+    "parcel-bundler": "^1.9.7"
+  }
+}
