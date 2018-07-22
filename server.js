@@ -3,10 +3,17 @@ const app = express()
 const server = require('http').Server(app)
 const io = require('socket.io').listen(server)
 
-// express routing
-app.use(express.static(__dirname + '/public'))
+const Game = require("./server/js/GameElements/Game")
+
+// express routing for client download
+app.use(express.static(__dirname + '/client/dist'))
 app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/index.html')
+    res.sendFile(__dirname + '/client/dist/index.html')
+})
+
+app.get('/server-test', (req, res) => {
+    const game = new Game(7, 6, factions[0], factions[0], 8)
+    res.send(game.field1.height.toString())
 })
 
 // socket.io server	
@@ -38,6 +45,8 @@ const factions = [
     }
 ]
 
+const players = {}
+
 io.on('connection', socket => {
     console.log('new connection...')
 
@@ -46,68 +55,18 @@ io.on('connection', socket => {
     
     socket.on('register', (data) => {
         console.log('player registration : ' + data.playerName + ' in team ' + data.playerColor)
-
-        let playerName = data.playerName
-        playerName += playerNameExists(playerName) ? (uniqueID++).toString() : ''
-
         players[socket.id] = {
-            id: socket.id,
             name: data.playerName,
-            x: Math.floor(Math.random() * 700) + 50,
-            y: Math.floor(Math.random() * 500) + 50,
-            rotation: 0,
             team: data.playerColor
         }
-
-        // send the playerInfos to every other connected player
-        socket.broadcast.emit('playerJoined', players[socket.id])
-
-        // send the playerInfos to the new player
-        socket.emit('initPlayers', players)
-        // send the star object to the new player
-        socket.emit('starLocation', star);
-        // send the current scores
-        socket.emit('scoreUpdate', scores);
-    })
-
-    socket.on('playerMove', ({ x, y, rotation }) => {
-        players[socket.id].x = x
-        players[socket.id].y = y
-        players[socket.id].rotation = rotation
-        socket.broadcast.emit('playerMoved', players[socket.id])
-    })
-
-    socket.on('starCollected', () => {
-        scores[players[socket.id].team] += 1
-
-        star.x = Math.floor(Math.random() * 700) + 50
-        star.y = Math.floor(Math.random() * 500) + 50
-        io.emit('starLocation', star)
-        io.emit('scoreUpdate', scores)
+        socket.emit('registered', 'youhou !!!');
     })
 
     socket.on('disconnect', () => {
         console.log('player disconnected : ' + players[socket.id].name)
-        io.emit('playerLeft', socket.id)
         delete players[socket.id]
-
-        // reinit game if last player left
-        if (Object.keys(io.sockets.sockets).length === 0) {
-            star.x = Math.floor(Math.random() * 700) + 50
-            star.y = Math.floor(Math.random() * 500) + 50
-            scores.blue = 0
-            scores.red = 0
-            uniqueID = 0
-        }
     })
 });
 
-const playerNameExists = (name) => {
-    return Object.keys(players).some(id => {
-        return players[id].name === name
-    })
-}
-
-server.listen(3000)
-
-console.log('Server running at localhost:3000/')
+server.listen(8080)
+console.log('Server running at localhost:8080/')

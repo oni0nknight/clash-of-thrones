@@ -1,6 +1,6 @@
 'use strict'
 
-import Serializable from "../Serializable"
+const Serializable = require('../Serializable')
 
 /**
  * @typedef {Object} UnitsDefinition
@@ -31,7 +31,7 @@ import Serializable from "../Serializable"
  * @property {PlayerStats} playerStats
  */
 
-export default class Player extends Serializable {
+module.exports = class Player extends Serializable {
     /**
      * @constructor
      * @param {Faction} faction

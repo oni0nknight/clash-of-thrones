@@ -20,7 +20,7 @@ function _generateUUID() {
     })
 }
 
-export default class Serializable {
+module.exports = class Serializable {
     constructor() {
         this.uuid = _generateUUID()
     }

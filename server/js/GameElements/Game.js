@@ -1,12 +1,12 @@
 'use strict'
 
-import Field from './Field'
-import Serializable from '../Serializable'
-import Player from './Player';
+const Field = require('./Field')
+const Player = require('./Player')
+const Serializable = require('../Serializable')
 
 const EliteProbability = 0.3
 
-export default class Game extends Serializable {
+module.exports = class Game extends Serializable {
     /**
      * @constructor
      * @param {number} width 

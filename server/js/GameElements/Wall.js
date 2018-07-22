@@ -1,7 +1,7 @@
 'use strict'
 
-import Entity from './Entity'
-import WallAbility from './WallAbility'
+const Entity = require('./Entity')
+const WallAbility = require('./WallAbility')
 
 /**
  * @typedef WallInfo
@@ -9,7 +9,7 @@ import WallAbility from './WallAbility'
  * @property {WallAbility} wallAbility the wall ability
  */
 
-export default class Wall extends Entity {
+module.exports = class Wall extends Entity {
     /**
      * @constructor
      * @param {WallInfo} wallInfo the wall information

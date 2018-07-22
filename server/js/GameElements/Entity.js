@@ -1,8 +1,8 @@
 'use strict'
 
-import Serializable from '../Serializable'
+const Serializable = require('../Serializable')
 
-export default class Entity extends Serializable {
+module.exports = class Entity extends Serializable {
     constructor(strength) {
         super()
         this.strength = strength

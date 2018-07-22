@@ -1,13 +1,13 @@
 'use strict'
 
-import Unit from './Unit'
-import { UnitSizes } from './Unit'
-import Player from './Player'
-import Serializable from '../Serializable'
+const Unit = require('./Unit')
+const UnitSizes = Unit.UnitSizes
+const Player = require('./Player')
+const Serializable = require('../Serializable')
 
 const EliteProbability = 0.3
 
-export default class Field extends Serializable {
+module.exports = class Field extends Serializable {
     /**
      * @constructor
      * @param {number} width number of columns

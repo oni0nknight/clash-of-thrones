@@ -1,8 +1,8 @@
 'use strict'
 
-import Serializable from '../Serializable'
+const Serializable = require('../Serializable')
 
-export default class WallAbility extends Serializable {
+module.exports = class WallAbility extends Serializable {
     constructor(source) {
         super()
         this.source = source
