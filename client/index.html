@@ -13,7 +13,8 @@
         </div>
 
         <div class="container-fluid">
-            <form id="form" novalidate>
+            <!-- INIT VIEW -->
+            <form id="init-form" class='view' novalidate>
                 <div class="form-group">
                     <label for="playerName">Player name</label>
                     <input type="text" id="playerName" class="form-control" placeholder="Player name" required>
@@ -21,9 +22,46 @@
                         Please choose a name.
                     </div>
                 </div>
-                <button type="button" id="host-btn" class="btn btn-primary">Host game</button>
-                <button type="button" id="find-btn" class="btn btn-default">Find game</button>
+                <div class="form-group">
+                    <label for="factionSelect">Faction</label>
+                    <select class="form-control" id="factionSelect" required></select>
+                    <div class="invalid-feedback">
+                        Please choose a faction.
+                    </div>
+                </div>
+                <button type="button" id="host-btn" data-action="host" class="btn btn-primary">Host game</button>
+                <button type="button" id="find-btn" data-action="find" class="btn btn-default">Find game</button>
             </form>
+
+            <!-- HOST VIEW -->
+            <form id="host-form" class='view' novalidate>
+                <div class="form-group">
+                    <label for="gameName">Game name</label>
+                    <input type="text" id="gameName" class="form-control" placeholder="Game name" required>
+                    <div class="invalid-feedback">
+                        Please choose a name.
+                    </div>
+                </div>
+                <button type="button" id="create-btn" data-action="create-game" class="btn btn-primary">Create</button>
+            </form>
+
+            <!-- FIND VIEW -->
+            <form id="find-form"class='view'  novalidate>
+                <div class="form-group">
+                    <label for="gameSelect">Select a game</label>
+                    <select class="form-control" id="gameSelect" required></select>
+                    <div class="invalid-feedback">
+                        Please choose a game to join.
+                    </div>
+                </div>
+                <button type="button" id="join-btn" data-action="join-game" class="btn btn-primary">Join game</button>
+            </form>
+
+            <!-- WAITING VIEW -->
+            <h3 id="waiting" class='view'>Waiting for another player...</h3>
+
+            <!-- JOINING VIEW -->
+            <h3 id="joining" class='view'>Joining game...</h3>
         </div>
     </body>
 </html>

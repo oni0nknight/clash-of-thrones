@@ -27,28 +27,74 @@ app.get('/server-test', (req, res) => {
 // Socket.io server
 //=================================================
 
-const players = {}
+let pendingGames = []
+let games = []
+let uniqueID = 0
+let players = {}
 
-io.on('connection', socket => {
-    console.log('new connection...')
+io.on('connection', socket => 
+{
+    // lifecycle
+    //=======================================
 
-    // add the new player
-    players[socket.id] = {}
-    
     socket.on('register', (data) => {
-        console.log('player registration : ' + data.playerName + ' in team ' + data.playerColor)
+        let playerName = data.name
+        playerName += playerNameExists(playerName) ? '#' + (uniqueID++).toString() : ''
+
         players[socket.id] = {
-            name: data.playerName,
-            team: data.playerColor
+            id: socket.id,
+            name: playerName,
+            faction: data.faction,
+            game: null
         }
-        socket.emit('registered', 'youhou !!!');
     })
 
     socket.on('disconnect', () => {
-        console.log('player disconnected : ' + players[socket.id].name)
-        delete players[socket.id]
+        if (players[socket.id]) {
+            const playerName = players[socket.id].name
+            pendingGames = pendingGames.filter(pg => (pg.playerName !== playerName))
+        }
+    })
+
+    // calls
+    //=======================================
+
+    socket.on('hostGame', (gameName) => {
+        const pendingGameId = generateUUID()
+        if (players[socket.id]) {
+            pendingGames.push({
+                id: pendingGameId,
+                playerName: players[socket.id].name,
+                gameName: gameName
+            })
+        }
+    })
+
+
+    // queries
+    //=======================================
+
+    socket.on('pendingGames', () => {
+        socket.emit('pendingGames_response', pendingGames)
+    })
+
+    socket.on('factions', () => {
+        socket.emit('factions_response', gameData.factions)
     })
 });
+
+function generateUUID() {
+    return 'xxxxxxxx-pending-xxxxxxxx'.replace(/[x]/g, () => {
+        return (Math.random() * 16 | 0).toString(16)
+    })
+}
+
+function playerNameExists(name) {
+    return Object.keys(players).some(id => {
+        return players[id].name === name
+    })
+}
+
 
 server.listen(8080)
 console.log('Server running at localhost:8080/')
