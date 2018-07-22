@@ -4,46 +4,28 @@ const server = require('http').Server(app)
 const io = require('socket.io').listen(server)
 
 const Game = require("./server/js/GameElements/Game")
+const gameData = require("./server/assets/data.json")
 
-// express routing for client download
+
+// Express routing
+//=================================================
+
+// express routing for client serving
 app.use(express.static(__dirname + '/client/dist'))
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/client/dist/index.html')
 })
 
+// express routing for the test route (useful during dev)
 app.get('/server-test', (req, res) => {
+    const factions = gameData.factions
     const game = new Game(7, 6, factions[0], factions[0], 8)
     res.send(game.field1.height.toString())
 })
 
-// socket.io server	
-const factions = [
-    {
-        id: 'targaryens',
-        units: {
-            normal: {
-                idleStrength: 1,
-                packedBaseStrength: 1,
-                attackDelay: 1,
-                strengthGain: 1
-            },
-            elite: {
-                idleStrength: 2,
-                packedBaseStrength: 4,
-                attackDelay: 2,
-                strengthGain: 2
-            }
-        },
-        colors: [
-            '#ff0000', '#00ff00', '#0000ff'
-        ],
-        playerStats: {
-            health: 12,
-            allowedMoves: 3,
-            eliteCount: 7
-        }
-    }
-]
+
+// Socket.io server
+//=================================================
 
 const players = {}
 
