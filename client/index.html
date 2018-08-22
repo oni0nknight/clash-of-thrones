@@ -29,12 +29,12 @@
                         Please choose a faction.
                     </div>
                 </div>
-                <button type="button" id="host-btn" data-action="host" class="btn btn-primary">Host game</button>
-                <button type="button" id="find-btn" data-action="find" class="btn btn-default">Find game</button>
+                <button type="button" id="host-btn" data-action="host" class="btn btn-primary">Host a game</button>
+                <button type="button" id="join-btn" data-action="join" class="btn btn-default">Join a game</button>
             </form>
 
-            <!-- HOST VIEW -->
-            <form id="host-form" class='view' novalidate>
+            <!-- HOST LOBBY VIEW -->
+            <form id="host-lobby-form" class='view' novalidate>
                 <div class="form-group">
                     <label for="gameName">Game name</label>
                     <input type="text" id="gameName" class="form-control" placeholder="Game name" required>
@@ -45,8 +45,11 @@
                 <button type="button" id="create-btn" data-action="create-game" class="btn btn-primary">Create</button>
             </form>
 
-            <!-- FIND VIEW -->
-            <form id="find-form"class='view'  novalidate>
+            <!-- JOIN LOBBY VIEW -->
+            <form id="join-lobby-form" class='view'  novalidate>
+                <div class="form-group">
+                    <a class="btn btn-default" href="" role="button" data-action="back">Link</a>
+                </div>
                 <div class="form-group">
                     <label for="gameSelect">Select a game</label>
                     <select class="form-control" id="gameSelect" required></select>
@@ -57,11 +60,8 @@
                 <button type="button" id="join-btn" data-action="join-game" class="btn btn-primary">Join game</button>
             </form>
 
-            <!-- WAITING VIEW -->
-            <h3 id="waiting" class='view'>Waiting for another player...</h3>
-
-            <!-- JOINING VIEW -->
-            <h3 id="joining" class='view'>Joining game...</h3>
+            <!-- HOST WAITING VIEW -->
+            <h3 id="host_wait" class='view'>Waiting for another player...</h3>
         </div>
     </body>
 </html>

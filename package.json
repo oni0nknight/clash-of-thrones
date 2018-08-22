@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start-server": "nodemon server.js --exec node",
+    "start-server": "nodemon server/server.js --exec node",
     "build-client": "parcel build client/*.html -d client/dist",
     "start-client": "parcel client/*.html -d client/dist"
   },

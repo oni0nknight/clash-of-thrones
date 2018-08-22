@@ -3,17 +3,17 @@ const app = express()
 const server = require('http').Server(app)
 const io = require('socket.io').listen(server)
 
-const Game = require("./server/js/GameElements/Game")
-const gameData = require("./server/assets/data.json")
+const Game = require("./js/GameElements/Game")
+const gameData = require("./assets/data.json")
 
 
 // Express routing
 //=================================================
 
 // express routing for client serving
-app.use(express.static(__dirname + '/client/dist'))
+app.use(express.static(__dirname + '/../client/dist'))
 app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/client/dist/index.html')
+    res.sendFile(__dirname + '/../client/dist/index.html')
 })
 
 // express routing for the test route (useful during dev)
@@ -60,12 +60,20 @@ io.on('connection', socket =>
     //=======================================
 
     socket.on('hostGame', (gameName) => {
-        const pendingGameId = generateUUID()
-        if (players[socket.id]) {
-            pendingGames.push({
-                id: pendingGameId,
-                playerName: players[socket.id].name,
-                gameName: gameName
+        checkRegistration(socket.id)
+        pendingGames.push({
+            id: generateUUID(),
+            playerName: players[socket.id].name,
+            gameName: gameName
+        })
+    })
+
+    socket.on('joinGame', (pendingGameId) => {
+        checkRegistration(socket.id)
+        const pendingGame = pendingGames.find(pg => pg.id === pendingGameId)
+        if (pendingGame) {
+            games.push({
+                newGame: 1
             })
         }
     })
@@ -93,6 +101,12 @@ function playerNameExists(name) {
     return Object.keys(players).some(id => {
         return players[id].name === name
     })
+}
+
+function checkRegistration(socketId) {
+    if (!players[socketId]) {
+        throw new Error('player must be registered to use this feature')
+    }
 }
 
 

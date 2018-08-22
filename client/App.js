@@ -3,10 +3,11 @@ import $ from 'jquery'
 import Client from './js/Client'
 
 const client = new Client()
+const stateStack = ['init']
 
 window.onload = () => {
     // init DOM
-    startInitView()
+    switchToState('init')
 
     // get faction list and then bind events
     client.query('factions').then(factions => {
@@ -33,52 +34,47 @@ function bindEvents() {
 
             // go to next step
             if ($(this).data('action') === 'host') {
-                startHostView()
+                switchToState('host_lobby')
             } else {
-                startJoinView()
+                // fill the available games list
+                client.query('pendingGames').then(pendingGames => {
+                    $('#gameSelect').html(pendingGames.map(pendingGame => {
+                        return '<option value="'+pendingGame.id+'">' + pendingGame.gameName + '</option>'
+                    }))
+                })
+                switchToState('join_lobby')
             }
         }
     })
-    $('#host-form button').on('click', function(e) {
-        const form = $('#host-form')
+
+    $('#host-lobby-form button').on('click', function(e) {
+        const form = $('#host-lobby-form')
         form.addClass('was-validated')
         if (form[0].checkValidity()) {
             client.call('hostGame', $('#gameName').val())
-            startWaitingView()
+            switchToState('host_wait')
         }
     })
-    $('#find-form button').on('click', function(e) {
-        const form = $('#find-form')
+
+    $('#join-lobby-form button').on('click', function(e) {
+        const form = $('#join-lobby-form')
         form.addClass('was-validated')
         if (form[0].checkValidity()) {
-            startJoiningView()
+            alert('jquery .val() is : ' + $('#gameSelect option:selected').val())
+            client.call('joinGame', $('#gameSelect option:selected').val())
+            switchToState('???')
         }
     })
 }
 
-function startInitView() {
+function switchToState(newState) {
     $('.view').hide()
-    $('#init-form').show()
-}
-function startHostView() {
-    $('.view').hide()
-    $('#host-form').show()
-}
-function startWaitingView() {
-    $('.view').hide()
-    $('#waiting').show()
-}
-function startJoiningView() {
-    $('.view').hide()
-    $('#joining').show()
-}
-function startJoinView() {
-    $('.view').hide()
-    $('#find-form').show()
-
-    client.query('pendingGames').then(pendingGames => {
-        $('#gameSelect').html(pendingGames.map(pendingGame => {
-            return '<option value="'+pendingGame.id+'">' + pendingGame.gameName + '</option>'
-        }))
-    })
+    switch (newState) {
+        case 'init' : $('#init-form').show(); break;
+        case 'host_lobby' : $('#host-lobby-form').show(); break;
+        case 'join_lobby' : $('#join-lobby-form').show(); break;
+        case 'host_wait' : $('#host_wait').show(); break;
+        default : break;
+    }
+    stateStack.push(newState)
 }
