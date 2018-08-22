@@ -27,7 +27,6 @@ app.get('/server-test', (req, res) => {
 // Socket.io server
 //=================================================
 
-let pendingGames = []
 let games = []
 let uniqueID = 0
 let players = {}
@@ -42,40 +41,99 @@ io.on('connection', socket =>
         playerName += playerNameExists(playerName) ? '#' + (uniqueID++).toString() : ''
 
         players[socket.id] = {
-            id: socket.id,
+            socket: socket,
             name: playerName,
             faction: data.faction,
-            game: null
+            gameId: null
         }
     })
 
     socket.on('disconnect', () => {
         if (players[socket.id]) {
-            const playerName = players[socket.id].name
-            pendingGames = pendingGames.filter(pg => (pg.playerName !== playerName))
+            destroyGame(socket)
         }
+        delete players[socket.id]
     })
 
     // calls
     //=======================================
 
-    socket.on('hostGame', (gameName) => {
-        checkRegistration(socket.id)
-        pendingGames.push({
-            id: generateUUID(),
-            playerName: players[socket.id].name,
-            gameName: gameName
-        })
+    socket.on('createGame', (gameName) => {
+        if (!players[socket.id]) {
+            sendError(socket, 'Player must be registered to use this feature')
+            return;
+        }
+        serverLog(socket.id, 'requesting to create game ' + gameName)
+        if (players[socket.id].gameId == null) {
+            // create the game
+            const game = {
+                id: generateUUID(),
+                playerId: socket.id,
+                playerName: players[socket.id].name,
+                gameName: gameName,
+                joinedPlayerId: null,
+                lastGameState: null
+            }
+
+            // add it to games list
+            games.push(game)
+
+            // add a reference to it in player structure
+            players[socket.id].gameId = game.id
+        }
     })
 
-    socket.on('joinGame', (pendingGameId) => {
-        checkRegistration(socket.id)
-        const pendingGame = pendingGames.find(pg => pg.id === pendingGameId)
-        if (pendingGame) {
-            games.push({
-                newGame: 1
-            })
+    socket.on('joinGame', (gameId) => {
+        if (!players[socket.id]) {
+            sendError(socket, 'Player must be registered to use this feature')
+            return;
         }
+        serverLog(socket.id, 'requesting to join game ' + gameId)
+        const game = games.find(g => g.id === gameId)
+        if (game && players[socket.id].gameId == null && game.playerId != null && players[game.playerId]) {
+            // join the game
+            game.joinedPlayerId = socket.id
+            
+            // notify both players that the game is ready
+            socket.emit('gameReady')
+            players[game.playerId].socket.emit('gameReady')
+        } else {
+            sendError(socket, 'Error while joining game')
+        }
+    })
+    
+    socket.on('startGame', () => {
+        if (!players[socket.id]) {
+            sendError(socket, 'Player must be registered to use this feature')
+            return;
+        }
+        serverLog(socket.id, 'requesting to start game')
+        if (players[socket.id].gameId != null) {
+            const game = games.find(g => g.id === players[socket.id].gameId)
+
+            if (game && game.playerId === socket.id && game.joinedPlayerId != null && players[game.joinedPlayerId]) {
+                const hostPlayer = players[socket.id]
+                const joinedPlayer = players[game.joinedPlayerId]
+                const gameObj = new Game(7, 6, hostPlayer.faction, joinedPlayer.faction, 8)
+
+                // initialize game
+
+                // generate game state & set it to game.lastGameState
+
+                // send the game state to the 2 players
+            }
+        } else {
+            sendError(socket, 'Must host or join a game first')
+        }
+    })
+
+    socket.on('destroyGame', () => {
+        if (!players[socket.id]) {
+            sendError(socket, 'Player must be registered to use this feature')
+            return;
+        }
+        serverLog(socket.id, 'requesting to destroy game')
+        destroyGame(socket)
     })
 
 
@@ -83,16 +141,34 @@ io.on('connection', socket =>
     //=======================================
 
     socket.on('pendingGames', () => {
+        serverLog(socket.id, 'requesting pending games')
+        const pendingGames = games.filter(g => g.joinedPlayerId == null).map(g => {
+            return {
+                id: g.id,
+                gameName: g.gameName,
+                playerName: g.playerName
+            }
+        })
+
         socket.emit('pendingGames_response', pendingGames)
     })
 
     socket.on('factions', () => {
+        serverLog(socket.id, 'requesting factions')
         socket.emit('factions_response', gameData.factions)
     })
 });
 
+function serverLog(socketId, message) {
+    console.log(socketId + ' :: ' + message)
+}
+
+function sendError(socket, errorMessage) {
+    socket.emit('err', errorMessage)
+}
+
 function generateUUID() {
-    return 'xxxxxxxx-pending-xxxxxxxx'.replace(/[x]/g, () => {
+    return 'xxxxxxxx-game-xxxxxxxx'.replace(/[x]/g, () => {
         return (Math.random() * 16 | 0).toString(16)
     })
 }
@@ -103,9 +179,32 @@ function playerNameExists(name) {
     })
 }
 
-function checkRegistration(socketId) {
-    if (!players[socketId]) {
-        throw new Error('player must be registered to use this feature')
+function destroyGame(socket) {
+    if (players[socket.id].gameId != null)
+    {
+        // retrieve game infos before removing
+        const game = games.find(g => g.id === players[socket.id].gameId)
+
+        if (game && game.playerId === socket.id) {
+            serverLog(socket.id, 'destroying game ' + game.gameName)
+
+            // remove game from games list
+            games.splice(games.indexOf(game), 1)
+
+            // remove the reference in player structure
+            players[socket.id].gameId = null
+
+            // Notify both players that the game is destroyed
+            socket.emit('gameDestroyed')
+            if (game.joinedPlayerId != null && players[game.joinedPlayerId]) {
+                players[game.joinedPlayerId].socket.emit('gameDestroyed')
+            }
+
+            serverLog(socket.id, 'new games list : ')
+            serverLog(socket.id, games)
+        } else {
+            sendError(socket, 'You do not have the permission required for this action')
+        }
     }
 }
 

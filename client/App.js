@@ -3,7 +3,7 @@ import $ from 'jquery'
 import Client from './js/Client'
 
 const client = new Client()
-const stateStack = ['init']
+const stateStack = []
 
 window.onload = () => {
     // init DOM
@@ -22,7 +22,7 @@ window.onload = () => {
 }
 
 function bindEvents() {
-    $('#init-form button').on('click', function(e) {
+    $('#init-form button[data-type="submit"]').on('click', function(e) {
         const form = $('#init-form')
         form.addClass('was-validated')
         if (form[0].checkValidity()) {
@@ -47,23 +47,29 @@ function bindEvents() {
         }
     })
 
-    $('#host-lobby-form button').on('click', function(e) {
+    $('#host-lobby-form button[data-type="submit"]').on('click', (e) => {
         const form = $('#host-lobby-form')
         form.addClass('was-validated')
         if (form[0].checkValidity()) {
-            client.call('hostGame', $('#gameName').val())
+            client.call('createGame', $('#gameName').val())
             switchToState('host_wait')
         }
     })
 
-    $('#join-lobby-form button').on('click', function(e) {
+    $('#join-lobby-form button[data-type="submit"]').on('click', (e) => {
         const form = $('#join-lobby-form')
         form.addClass('was-validated')
         if (form[0].checkValidity()) {
-            alert('jquery .val() is : ' + $('#gameSelect option:selected').val())
             client.call('joinGame', $('#gameSelect option:selected').val())
             switchToState('???')
         }
+    })
+
+    $('button[data-action="back"]').on('click', (e) => {
+        const oldState = stateStack.pop()
+        leaveState(oldState)
+        const newState = stateStack.pop()
+        switchToState(newState)
     })
 }
 
@@ -77,4 +83,11 @@ function switchToState(newState) {
         default : break;
     }
     stateStack.push(newState)
+}
+
+function leaveState(oldState) {
+    switch (oldState) {
+        case 'host_wait' : client.call('destroyGame')
+        default : break;
+    }
 }
