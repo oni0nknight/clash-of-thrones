@@ -3,10 +3,6 @@ import io from 'socket.io-client'
 export default class Client {
     constructor() {
         this.socket = io.connect()
-
-        this.socket.on('err', errorMessage => {
-            alert(errorMessage)
-        })
     }
 
     call(eventName, args) {
@@ -16,14 +12,26 @@ export default class Client {
     query(eventName, args) {
         return new Promise((resolve, reject) => {
             let timeout = 0
-            this.socket.on(eventName+'_response', result => {
+
+            const handleResponse = result => {
+                this.socket.off(eventName+'_response', handleResponse)
                 clearTimeout(timeout)
                 resolve(result)
-            })
+            }
+            const handleError = () => {
+                this.socket.off(eventName+'_response', handleResponse)
+                clearTimeout(timeout)
+                reject()
+            }
+
+            // subscribe to response handler
+            this.socket.on(eventName+'_response', handleResponse)
+
+            // emit the query
             this.socket.emit(eventName, args)
-            timeout = setTimeout(() => {
-                reject('timeout')
-            }, 10000)
+
+            // handle timeout
+            timeout = setTimeout(handleError, 5000)
         })
     }
 }
