@@ -4,12 +4,13 @@ const _serializeArr = (array) => {
     return array.map(el => {
         if (el.serialize instanceof Function) {
             return el.serialize()
-        } else if (el.isArray()) {
+        } else if (Array.isArray(el)) {
             return _serializeArr(el)
         } else if (!(el instanceof Object)) {
             return el
         } else {
             // litterals must inherit from Serializable in order to be serialized
+            return undefined
         }
     }, [])
 }
@@ -26,25 +27,18 @@ module.exports = class Serializable {
     }
 
     serialize() {
-        return Object.keys(this).reduce(function(acc, key) {
+        return Object.keys(this).reduce((acc, key) => {
+            let returnValue = { ...acc }
             if (this[key].serialize instanceof Function) {
-                return {
-                    ...acc, 
-                    key: this[key].serialize()
-                }
-            } else if (this[key].isArray()) {
-                return {
-                    ...acc,
-                    key: _serializeArr(this[key])
-                }
+                returnValue[key] = this[key].serialize()
+            } else if (Array.isArray(this[key])) {
+                returnValue[key] = _serializeArr(this[key])
             } else if (!(this[key] instanceof Object)) {
-                return {
-                    ...acc,
-                    key: this[key]
-                }
+                returnValue[key] = this[key]
             } else {
                 // litterals must inherit from Serializable in order to be serialized
             }
+            return returnValue
         }, {})
     }
 }
