@@ -3,7 +3,9 @@ import $ from 'jquery'
 import Client from './js/Client'
 
 const client = new Client()
+const game = new Game()
 const stateStack = []
+let isHost = false
 
 window.onload = () => {
     // init DOM
@@ -34,6 +36,7 @@ function bindEvents() {
 
             // go to next step
             if ($(this).data('action') === 'host') {
+                isHost = true
                 switchToState('host_lobby')
             } else {
                 // fill the available games list
@@ -42,6 +45,7 @@ function bindEvents() {
                         return '<option value="'+pendingGame.id+'">' + pendingGame.gameName + '</option>'
                     }))
                 })
+                isHost = false
                 switchToState('join_lobby')
             }
         }
@@ -53,6 +57,9 @@ function bindEvents() {
         if (form[0].checkValidity()) {
             client.call('createGame', $('#gameName').val())
             switchToState('host_wait')
+
+            // subscibe to event
+            client.subscribe('gameReady', launchGame)
         }
     })
 
@@ -60,8 +67,11 @@ function bindEvents() {
         const form = $('#join-lobby-form')
         form.addClass('was-validated')
         if (form[0].checkValidity()) {
+            // subscibe to event
+            client.subscribe('gameReady', launchGame)
+
+            // join game
             client.call('joinGame', $('#gameSelect option:selected').val())
-            switchToState('???')
         }
     })
 
@@ -80,6 +90,7 @@ function switchToState(newState) {
         case 'host_lobby' : $('#host-lobby-form').show(); break;
         case 'join_lobby' : $('#join-lobby-form').show(); break;
         case 'host_wait' : $('#host_wait').show(); break;
+        case 'game' : $('#game').show(); break;
         default : break;
     }
     stateStack.push(newState)
@@ -88,6 +99,25 @@ function switchToState(newState) {
 function leaveState(oldState) {
     switch (oldState) {
         case 'host_wait' : client.call('destroyGame')
+        case 'game' : client.unsubscribe('gameStat', game.updateGameState)
         default : break;
+    }
+}
+
+function launchGame() {
+    client.unsubscribe('gameReady', launchGame)
+
+    // initialize phaser game
+    game.initialize($('#playerName').val(), $('#factionSelect').val())
+
+    // display game
+    switchToState('game')
+
+    // subscibe to events
+    client.subscribe('gameState', game.updateGameState)
+
+    // send start game event
+    if (isHost) {
+        client.call('startGame')
     }
 }
