@@ -20,7 +20,7 @@ app.get('/', (req, res) => {
 app.get('/server-test', (req, res) => {
     const factions = gameData.factions
     const game = new Game(7, 6, factions[0], factions[0], 8)
-    res.send(game.field1.height.toString())
+    res.send(game.serialize())
 })
 
 
@@ -37,14 +37,21 @@ io.on('connection', socket =>
     //=======================================
 
     socket.on('register', (data) => {
+        serverLog(socket.id, 'requesting to register player ' + data.name + ' with faction ' + data.faction)
+
         let playerName = data.name
         playerName += playerNameExists(playerName) ? '#' + (uniqueID++).toString() : ''
+        let faction = gameData.factions.find(faction => faction.id === data.faction)
 
-        players[socket.id] = {
-            socket: socket,
-            name: playerName,
-            faction: data.faction,
-            gameId: null
+        if (playerName && faction) {
+            players[socket.id] = {
+                socket: socket,
+                name: playerName,
+                faction: faction,
+                gameId: null
+            }
+        } else {
+            sendError(socket, 'this faction doesn\'t exists. Impossible to register player')
         }
     })
 
@@ -114,13 +121,17 @@ io.on('connection', socket =>
             if (game && game.playerId === socket.id && game.joinedPlayerId != null && players[game.joinedPlayerId]) {
                 const hostPlayer = players[socket.id]
                 const joinedPlayer = players[game.joinedPlayerId]
+                
+                // initialize game
                 const gameObj = new Game(7, 6, hostPlayer.faction, joinedPlayer.faction, 8)
 
-                // initialize game
-
                 // generate game state & set it to game.lastGameState
+                const gameState = gameObj.serialize()
+                game.lastGameState = gameState
 
                 // send the game state to the 2 players
+                socket.emit('gameState', gameState)
+                joinedPlayer.socket.emit('gameState', gameState)
             }
         } else {
             sendError(socket, 'Must host or join a game first')
@@ -164,6 +175,7 @@ function serverLog(socketId, message) {
 }
 
 function sendError(socket, errorMessage) {
+    serverLog(socket.id, 'ERR : ' + errorMessage)
     socket.emit('err', errorMessage)
 }
 
