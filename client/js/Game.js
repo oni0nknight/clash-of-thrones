@@ -1,25 +1,23 @@
-import Client from './Client'
+
 
 export default class Game {
-    constructor(playerName, playerColor) {
+    constructor() {
         this.game = null
         this.scene = null
-        this.client = new Client(this)
         
-        this.playerName = playerName
-        this.playerColor = playerColor
-
-        // test
-        this.client.connect()
-        this.client.registerPlayer(this.playerName, this.playerColor)
+        this.playerName = null
+        this.faction = null
 
         this.gameObjects = {}
     }
 
-    launch() {
+    initialize(playerName, faction) {
+        this.playerName = playerName
+        this.faction = faction
+
         const config = {
             type: Phaser.AUTO,
-            parent: 'phaser-example',
+            parent: 'game',
             width: 800,
             height: 600,
             physics: {
@@ -30,9 +28,9 @@ export default class Game {
                 }
             },
             scene: { 
-                preload: this.preload.bind(this), 
-                create: this.create.bind(this), 
-                update: this.update.bind(this) 
+                preload: this.preload.bind(this),
+                create: this.create.bind(this),
+                update: this.update.bind(this)
             }
         };
            
@@ -49,5 +47,12 @@ export default class Game {
     }
 
     update() {
+    }
+
+    // Events
+    //============================================
+
+    updateGameState(newState) {
+        console.log('received a new state : ', newState)
     }
 }
