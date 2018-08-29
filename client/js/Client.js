@@ -34,4 +34,14 @@ export default class Client {
             timeout = setTimeout(handleError, 5000)
         })
     }
+
+    subscribe(eventName, callback) {
+        if (callback instanceof Function) {
+            this.socket.on(eventName, callback)
+        }
+    }
+
+    unsubscribe(eventName, callback) {
+        this.socket.off(eventName, callback)
+    }
 }
