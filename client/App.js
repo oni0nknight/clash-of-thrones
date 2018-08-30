@@ -120,4 +120,9 @@ function launchGame() {
     if (isHost) {
         client.call('startGame')
     }
+
+    // DEBUG
+    $('#test_btn').on('click', e => {
+        client.call('changeTurn')
+    })
 }

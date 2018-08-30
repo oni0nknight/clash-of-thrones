@@ -18,7 +18,7 @@ const bindSocket = (socket, players, games) => {
                 playerName: players[socket.id].name,
                 gameName: gameName,
                 joinedPlayerId: null,
-                lastGameState: null
+                gameInstance: null
             }
 
             // add it to games list
@@ -39,6 +39,7 @@ const bindSocket = (socket, players, games) => {
         if (game && players[socket.id].gameId == null && game.playerId != null && players[game.playerId]) {
             // join the game
             game.joinedPlayerId = socket.id
+            players[socket.id].gameId = game.id
             
             // notify both players that the game is ready
             socket.emit('gameReady')

@@ -4,8 +4,6 @@ const Field = require('./Field')
 const Player = require('./Player')
 const Serializable = require('../Serializable')
 
-const EliteProbability = 0.3
-
 module.exports = class Game extends Serializable {
     /**
      * @constructor
@@ -21,5 +19,9 @@ module.exports = class Game extends Serializable {
         this.field2 = new Field(width, height, player2Faction, startUnitCount)
 
         this.turn = 1 // 1 or 2 : indicates the player whose turn it is
+    }
+
+    changeTurn() {
+        this.turn = this.turn === 1 ? 2 : 1
     }
 }
