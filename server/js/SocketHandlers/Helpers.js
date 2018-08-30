@@ -1,13 +1,13 @@
 'use strict'
 
-module.exports = {
+const Helpers = {
     
     serverLog(socketId, message) {
         console.log(socketId + ' :: ' + message)
     },
     
     sendError(socket, errorMessage) {
-        serverLog(socket.id, 'ERR : ' + errorMessage)
+        Helpers.serverLog(socket.id, 'ERR : ' + errorMessage)
         socket.emit('err', errorMessage)
     },
     
@@ -17,3 +17,5 @@ module.exports = {
         })
     }
 }
+
+module.exports = Helpers
