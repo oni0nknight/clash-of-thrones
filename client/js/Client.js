@@ -3,6 +3,10 @@ import io from 'socket.io-client'
 export default class Client {
     constructor() {
         this.socket = io.connect()
+
+        this.socket.on('err', err => {
+            console.error(err)
+        })
     }
 
     call(eventName, args) {
