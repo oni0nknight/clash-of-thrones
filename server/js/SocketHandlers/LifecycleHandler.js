@@ -1,6 +1,7 @@
 'use strict'
 
 const helpers = require('./Helpers')
+const Logger = require('../Logger/Logger')
 const gameData = require('../../assets/data.json')
 
 const GameHandler = require('./GameHandler')
@@ -10,17 +11,16 @@ let uniqueID = 0
 const bindSocket = (socket, players, games) => {
 
     socket.on('register', (data) => {
-        helpers.serverLog(socket.id, 'requesting to register player ' + data.name + ' with faction ' + data.faction)
+        Logger.log(socket.id, 'requesting to register player ' + data.name + ' with faction ' + data.faction)
 
         let playerName = data.name
         playerName += Object.keys(players).some(id => players[id].name === playerName) ? '#' + (uniqueID++).toString() : ''
-        let faction = gameData.factions.find(faction => faction.id === data.faction)
 
-        if (playerName && faction) {
+        if (playerName) {
             players[socket.id] = {
                 socket: socket,
                 name: playerName,
-                faction: faction,
+                faction: data.faction,
                 gameId: null
             }
         } else {

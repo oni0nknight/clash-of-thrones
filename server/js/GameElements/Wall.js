@@ -1,26 +1,27 @@
 'use strict'
 
 const Entity = require('./Entity')
-const WallAbility = require('./WallAbility')
-
-/**
- * @typedef WallInfo
- * @property {number} strength the wall strength
- * @property {WallAbility} wallAbility the wall ability
- */
 
 module.exports = class Wall extends Entity {
     /**
      * @constructor
-     * @param {WallInfo} wallInfo the wall information
+     * @param {number} strength wall's strength
+     * @param {WallAbility} wallAbility wall's ability
      */
-    constructor(wallInfo) {
-        super(wallInfo.strength)
+    constructor(strength, wallAbility) {
+        super(strength)
 
-        this.wallAbility = wallInfo.wallAbility
+        this.wallAbility = wallAbility
     }
 
     executeAbility(gameContext) {
         this.wallAbility.execute(gameContext, this)
+    }
+
+    serialize() {
+        return {
+            ...super.serialize(),
+            wallAbility: this.wallAbility.serialize()
+        }
     }
 }

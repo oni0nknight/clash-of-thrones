@@ -37,6 +37,8 @@ let players = {}
 
 io.on('connection', socket => 
 {
+    console.log(socket.id + ' :: ' + 'new connection !')
+
     lifecycleHandler.bindSocket(socket, players, games)
     queriesHandler.bindSocket(socket, players, games)
     gameHandler.bindSocket(socket, players, games)

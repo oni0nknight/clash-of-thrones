@@ -1,9 +1,8 @@
 'use strict'
 
 const Unit = require('./Unit')
-const UnitSizes = Unit.UnitSizes
 const Player = require('./Player')
-const Serializable = require('../Serializable')
+const Serializable = require('./Serializable')
 
 const EliteProbability = 0.3
 
@@ -12,12 +11,12 @@ module.exports = class Field extends Serializable {
      * @constructor
      * @param {number} width number of columns
      * @param {number} height number of rows
-     * @param {Faction} playerFaction the player faction
+     * @param {string} faction the player faction
      * @param {number} startUnitCount number of units to instanciate at initialization
      */
-    constructor(width, height, playerFaction, startUnitCount) {
+    constructor(width, height, faction, startUnitCount) {
         super()
-        this.player = new Player(playerFaction)
+        this.player = new Player(faction)
         this.width = width
         this.height = height
 
@@ -35,11 +34,7 @@ module.exports = class Field extends Serializable {
     //=======================================
     
     instanciateUnit(type, color) {
-        return new Unit({
-            ...this.player.faction.units[type],
-            type,
-            color
-        })
+        return new Unit(this.player.faction, type, color)
     }
 
     removeUnit(uuid) {
@@ -57,7 +52,8 @@ module.exports = class Field extends Serializable {
 
     moveUnit(uuid, newColumnNumber) {
         const unitInfos = this.getUnitInfos(uuid)
-        if (unitInfos && UnitSizes[unitInfos.unit.type] < this.getFreeSpace(newColumnNumber)) {
+
+        if (unitInfos && unitInfos.unit.size < this.getFreeSpace(newColumnNumber)) {
             // move unit
             this.removeUnit(uuid)
             this.grid[newColumnNumber].push(unitInfos.unit)
@@ -75,15 +71,15 @@ module.exports = class Field extends Serializable {
                     return acc + (unit.type === 'elite' ? 1 : 0)
                 }, 0)
             }, 0)
-            const totalEliteAllowed = this.player.faction.playerStats.eliteCount
-            const eliteProba = (totalEliteAllowed - elitesOnGrid) / totalEliteAllowed * EliteProbability
+            const nbEliteAllowed = this.player.nbEliteAllowed
+            const eliteProba = (nbEliteAllowed - elitesOnGrid) / nbEliteAllowed * EliteProbability
             const unitType = (Math.random() < eliteProba) ? 'elite' : 'normal'
-            const unitColor = this.player.faction.colors[Math.floor(Math.random() * this.player.faction.colors.length)]
+            const unitColor = this.player.factionColors[Math.floor(Math.random() * this.player.factionColors.length)]
             const unit = this.instanciateUnit(unitType, unitColor)
 
             // determine unit location
             const possibleColumns = this.grid.filter((column, index) => {
-                return UnitSizes[unitType] < this.getFreeSpace(index)
+                return unit.size < this.getFreeSpace(index)
             })
             const column = possibleColumns[Math.floor(Math.random() * possibleColumns.length)]
             
@@ -169,7 +165,7 @@ module.exports = class Field extends Serializable {
             if (index !== -1) {
                 unitInfos.unit = col[index]
                 unitInfos.column = col
-                unitInfos.realRow = col.reduce((acc, unit, id) => id < index ? acc + unit.size : acc, 0)
+                unitInfos.realRow = col.reduce((acc, unit, id) => (id < index ? acc + unit.size : acc), 0)
                 return true
             }
             return false
@@ -181,5 +177,19 @@ module.exports = class Field extends Serializable {
         return this.height - this.grid[columnNumber].reduce((acc, unit) => {
             return acc + unit.size
         }, 0)
+    }
+
+
+    // Lifecycle
+    //=======================================
+
+    serialize() {
+        return {
+            player: this.player.serialize(),
+            width: this.width,
+            height: this.height,
+            reinforcement: this.reinforcement,
+            grid: this.grid.map(col => col.map(unit => unit.serialize()))
+        }
     }
 }

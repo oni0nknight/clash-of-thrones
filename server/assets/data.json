@@ -25,5 +25,12 @@
                 "eliteCount": 7
             }
         }
+    ],
+
+    "wallAbilities" : [
+        {
+            "name": "regenerate",
+            "source": "wall.strength++"
+        }
     ]
 }

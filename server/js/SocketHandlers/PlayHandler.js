@@ -1,22 +1,23 @@
 'use strict'
 
 const helpers = require('./Helpers')
+const Logger = require('../Logger/Logger')
 
 const Game = require('../GameElements/Game')
 
 const bindSocket = (socket, players, games) => {
     
     socket.on('startGame', () => {
-        helpers.serverLog(socket.id, 'requesting to start game')
+        Logger.log(socket.id, 'requesting to start game')
         if (!requestValid(socket, players, games)) {
             return;
         }
-        helpers.serverLog(socket.id, 'starting game')
+        Logger.log(socket.id, 'starting game')
 
         const game = getCurrentGame(socket, players, games)
 
         // player must be host to perform this action
-        if (game.playerId === socket.id) { 
+        if (game.playerId === socket.id) {
             const hostPlayer = players[socket.id]
             const joinedPlayer = players[game.joinedPlayerId]
             
@@ -36,11 +37,11 @@ const bindSocket = (socket, players, games) => {
     })
 
     socket.on('changeTurn', () => {
-        helpers.serverLog(socket.id, 'requesting to change turn')
+        Logger.log(socket.id, 'requesting to change turn')
         if (!requestValid(socket, players, games)) {
             return;
         }
-        helpers.serverLog(socket.id, 'changing turn')
+        Logger.log(socket.id, 'changing turn')
 
         const game = getCurrentGame(socket, players, games)
         game.gameInstance.changeTurn()
@@ -65,12 +66,12 @@ const requestValid = (socket, players, games) => {
     const game = getCurrentGame(socket, players, games)
 
     // check if player is in a game
-    if (players[socket.id].gameId == null || !game) {
+    if (!players[socket.id].gameId || !game) {
         helpers.sendError(socket, 'Must host or join a game first')
         return false
     }
 
-    // check if the game is complete and started
+    // check if the game is complete
     if (game.playerId == null || game.joinedPlayerId == null || !players[game.joinedPlayerId]) {
         helpers.sendError(socket, 'Game is not complete')
         return false

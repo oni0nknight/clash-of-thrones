@@ -1,13 +1,11 @@
 'use strict'
 
+const Logger = require('../Logger/Logger')
+
 const Helpers = {
     
-    serverLog(socketId, message) {
-        console.log(socketId + ' :: ' + message)
-    },
-    
     sendError(socket, errorMessage) {
-        Helpers.serverLog(socket.id, 'ERR : ' + errorMessage)
+        Logger.error(socket.id, 'ERR : ' + errorMessage)
         socket.emit('err', errorMessage)
     },
     

@@ -44,15 +44,15 @@ export default class Client {
     subscribe(eventName, callback) {
         if (callback instanceof Function) {
             this.socket.on(eventName, callback)
-            activeSubscriptions.push({eventName, callback})
+            this.activeSubscriptions.push({eventName, callback})
         }
     }
 
     unsubscribe(eventName, callback) {
         this.socket.off(eventName, callback)
-        const idx = activeSubscriptions.findIndex(actsub => (actsub.eventName === eventName && actsub.callback === callback))
+        const idx = this.activeSubscriptions.findIndex(actsub => (actsub.eventName === eventName && actsub.callback === callback))
         if (idx !== -1) {
-            activeSubscriptions.splice(idx, 1)
+            this.activeSubscriptions.splice(idx, 1)
         }
     }
 }

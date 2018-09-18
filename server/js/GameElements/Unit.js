@@ -1,50 +1,59 @@
 'use strict'
 
 const Entity = require('./Entity')
-
-/**
- * @typedef UnitInfo
- * @property {number} idleStrength the unit strength in IDLE mode
- * @property {number} packedBaseStrength the unit base strength when packed
- * @property {number} attackDelay the number of turns between pack formation and attack. Must be at least 1
- * @property {number} strengthGain the strength gained each turn during the attack delay
- * @property {string} type one of the types defined by Unit.UnitSizes
- * @property {string} color the unit color
- */
+const DataHelper = require('./DataHelpers')
 
 module.exports = class Unit extends Entity {
     static get UnitSizes() {
         return {
             normal: 1,
             elite: 2,
-            packed: 3
+            normalPacked: 3,
+            elitePacked: 3
         }
     }
 
     /**
      * @constructor
-     * @param {UnitInfo} unitInfo the unit information object
+     * @param {string} faction the faction ID of the unit
+     * @param {string} type the type of the unit
+     * @param {string} color the color of the unit
      */
-    constructor(unitInfo) {
-        super(unitInfo.idleStrength)
+    constructor(faction, type, color) {
+        const unitInfos  = DataHelper.getUnitInfos(faction, type)
+        
+        super(unitInfos.idleStrength)
 
-        this.size = Unit.UnitSizes[unitInfo.type]
-        this.type = unitInfo.type
-        this.status = 'idle'
+        this.faction = faction
+        this.type = type
+        this.color = color
 
-        this.color = unitInfo.color
-        this.packedBaseStrength = unitInfo.packedBaseStrength
-        this.attackDelay = unitInfo.attackDelay
-        this.strengthGain = unitInfo.strengthGain
+        this.attackDelay = unitInfos.attackDelay
+
+        this.unitInfos = unitInfos // store the unitInfos for runtime access. Should not be streamed
+    }
+
+    get size() {
+        return Unit.UnitSizes[this.type]
     }
 
     pack() {
-        this.strength = this.packedBaseStrength
-        this.status = 'packed'
+        this.strength = this.unitInfos.packedBaseStrength
+        this.type = this.type.startsWith('normal') ? 'normalPacked' : 'elitePacked'
     }
 
     evolve() {
-        this.strength += this.strengthGain
+        this.strength += this.unitInfos.strengthGain
         this.attackDelay--
+    }
+
+    serialize() {
+        return {
+            ...super.serialize(),
+            faction: this.faction,
+            type: this.type,
+            color: this.color,
+            attackDelay: this.attackDelay,
+        }
     }
 }

@@ -2,15 +2,15 @@
 
 const Field = require('./Field')
 const Player = require('./Player')
-const Serializable = require('../Serializable')
+const Serializable = require('./Serializable')
 
 module.exports = class Game extends Serializable {
     /**
      * @constructor
      * @param {number} width 
      * @param {number} height 
-     * @param {Faction} player1Faction 
-     * @param {Faction} player2Faction 
+     * @param {string} player1Faction 
+     * @param {string} player2Faction 
      * @param {number} startUnitCount 
      */
     constructor(width, height, player1Faction, player2Faction, startUnitCount) {
@@ -23,5 +23,13 @@ module.exports = class Game extends Serializable {
 
     changeTurn() {
         this.turn = this.turn === 1 ? 2 : 1
+    }
+
+    serialize() {
+        return {
+            field1: this.field1.serialize(),
+            field2: this.field2.serialize(),
+            turn: this.turn
+        }
     }
 }
