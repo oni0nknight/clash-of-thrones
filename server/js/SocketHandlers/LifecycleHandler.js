@@ -30,7 +30,7 @@ const bindSocket = (socket, players, games) => {
 
     socket.on('disconnect', () => {
         if (players[socket.id]) {
-            GameHandler.destroyGame(socket)
+            GameHandler.destroyGame(socket, players, games)
         }
         delete players[socket.id]
     })
