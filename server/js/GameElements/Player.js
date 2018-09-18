@@ -1,7 +1,7 @@
 'use strict'
 
 const Serializable = require('./Serializable')
-const DataHelper = require('./DataHelpers')
+const DataHelper = require('../DataHelpers')
 
 module.exports = class Player extends Serializable {
     /**

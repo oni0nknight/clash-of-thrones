@@ -1,6 +1,6 @@
 'use strict'
 
-const data = require('../../assets/data.json')
+const data = require('../assets/data.json')
 
 module.exports = {
 

@@ -1,7 +1,7 @@
 'use strict'
 
 const Entity = require('./Entity')
-const DataHelper = require('./DataHelpers')
+const DataHelper = require('../DataHelpers')
 
 module.exports = class Unit extends Entity {
     static get UnitSizes() {

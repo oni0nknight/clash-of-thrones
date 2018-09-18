@@ -1,7 +1,7 @@
 'use strict'
 
 const Serializable = require('./Serializable')
-const DataHelper = require('./DataHelpers')
+const DataHelper = require('../DataHelpers')
 const Logger = require('../Logger/Logger')
 
 module.exports = class WallAbility extends Serializable {
