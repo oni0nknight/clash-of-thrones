@@ -1,9 +1,12 @@
+window.PIXI   = require('phaser-ce/build/custom/pixi')
+window.p2     = require('phaser-ce/build/custom/p2')
+window.Phaser = require('phaser-ce/build/custom/phaser-split')
 
+import sprites from '../assets/sprites/sprites.png'
 
 export default class Game {
     constructor() {
         this.game = null
-        this.scene = null
         
         this.playerName = null
         this.faction = null
@@ -16,18 +19,11 @@ export default class Game {
         this.faction = faction
 
         const config = {
-            type: Phaser.AUTO,
+            renderer: Phaser.AUTO,
             parent: 'game',
-            width: 800,
-            height: 600,
-            physics: {
-                default: 'arcade',
-                arcade: {
-                    debug: false,
-                    gravity: { y: 0 }
-                }
-            },
-            scene: { 
+            width: '100',
+            height: '100',
+            state: { 
                 preload: this.preload.bind(this),
                 create: this.create.bind(this),
                 update: this.update.bind(this)
@@ -41,9 +37,11 @@ export default class Game {
     //============================================
 
     preload() {
+        this.game.load.spritesheet('sprites', sprites, 72, 72, -1, 8, 8)
     }
 
     create() {
+        this.game.add.sprite(0, 0, 'sprites', 0)
     }
 
     update() {
