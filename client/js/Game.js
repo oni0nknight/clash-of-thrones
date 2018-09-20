@@ -2,6 +2,7 @@ window.PIXI   = require('phaser-ce/build/custom/pixi')
 window.p2     = require('phaser-ce/build/custom/p2')
 window.Phaser = require('phaser-ce/build/custom/phaser-split')
 
+import frame from '../assets/frame.png'
 import sprites from '../assets/sprites/sprites.png'
 
 export default class Game {
@@ -37,11 +38,13 @@ export default class Game {
     //============================================
 
     preload() {
+        this.game.load.image('frame', frame)
         this.game.load.spritesheet('sprites', sprites, 72, 72, -1, 8, 8)
     }
 
     create() {
-        this.game.add.sprite(0, 0, 'sprites', 0)
+        this.game.add.image(0, 0, 'frame')
+        this.game.add.sprite(49, 663, 'sprites', 0)
     }
 
     update() {
