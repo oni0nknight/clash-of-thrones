@@ -3,7 +3,7 @@ import $ from 'jquery'
 import Client from './js/Client'
 
 const client = new Client()
-const game = new Game()
+const game = new Game(client)
 const stateStack = []
 let isHost = false
 
@@ -99,7 +99,7 @@ function switchToState(newState) {
 function leaveState(oldState) {
     switch (oldState) {
         case 'host_wait' : client.call('destroyGame')
-        case 'game' : client.unsubscribe('gameStat', game.updateGameState)
+        case 'game' : client.unsubscribe('gameState_push', game.updateGameState.bind(game))
         default : break;
     }
 }
@@ -114,7 +114,7 @@ function launchGame() {
     switchToState('game')
 
     // subscibe to events
-    client.subscribe('gameState', game.updateGameState)
+    client.subscribe('gameState_push', game.updateGameState.bind(game))
 
     // send start game event
     if (isHost) {
@@ -123,6 +123,6 @@ function launchGame() {
 
     // DEBUG
     $('#test_btn').on('click', e => {
-        client.call('changeTurn')
+        client.query('gameState').then(gs => game.updateGameState(gs))
     })
 }

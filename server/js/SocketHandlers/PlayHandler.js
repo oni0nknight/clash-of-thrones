@@ -26,11 +26,6 @@ const bindSocket = (socket, players, games) => {
     
             // keep track of it in game structure
             game.gameInstance = gameObj
-    
-            // send the game state to the 2 players
-            const gameState = gameObj.serialize()
-            socket.emit('gameState', gameState)
-            joinedPlayer.socket.emit('gameState', gameState)
         } else {
             helpers.sendError(socket, 'You do not have the permission required for this action')
         }

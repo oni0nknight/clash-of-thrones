@@ -2,24 +2,16 @@
 
 const Entity = require('./Entity')
 const DataHelper = require('../DataHelpers')
+const Logger = require('../Logger/Logger')
 
 module.exports = class Unit extends Entity {
-    static get UnitSizes() {
-        return {
-            normal: 1,
-            elite: 2,
-            normalPacked: 3,
-            elitePacked: 3
-        }
-    }
-
     /**
      * @constructor
      * @param {string} faction the faction ID of the unit
      * @param {string} type the type of the unit
      * @param {string} color the color of the unit
      */
-    constructor(faction, type, color) {
+    constructor(faction, type = 'normal', color) {
         const unitInfos  = DataHelper.getUnitInfos(faction, type)
         
         super(unitInfos.idleStrength)
@@ -28,18 +20,28 @@ module.exports = class Unit extends Entity {
         this.type = type
         this.color = color
 
+        this.packed = false
         this.attackDelay = unitInfos.attackDelay
 
         this.unitInfos = unitInfos // store the unitInfos for runtime access. Should not be streamed
     }
 
     get size() {
-        return Unit.UnitSizes[this.type]
+        if (this.packed) {
+            return 3
+        } else if (this.type === 'normal') {
+            return 1
+        } else if (this.type === 'elite') {
+            return 2
+        } else {
+            Logger.error('Unit.size :: unknown type unit')
+            return -1
+        }
     }
 
     pack() {
         this.strength = this.unitInfos.packedBaseStrength
-        this.type = this.type.startsWith('normal') ? 'normalPacked' : 'elitePacked'
+        this.packed = true
     }
 
     evolve() {
@@ -53,6 +55,8 @@ module.exports = class Unit extends Entity {
             faction: this.faction,
             type: this.type,
             color: this.color,
+            size: this.size,
+            packed: this.packed,
             attackDelay: this.attackDelay,
         }
     }

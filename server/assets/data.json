@@ -17,7 +17,7 @@
                 }
             },
             "colors": [
-                "#ff0000", "#00ff00", "#0000ff"
+                "red", "blue", "green", "yellow", "purple", "orange"
             ],
             "playerStats": {
                 "health": 12,
