@@ -90,7 +90,7 @@ function switchToState(newState) {
         case 'host_lobby' : $('#host-lobby-form').show(); break;
         case 'join_lobby' : $('#join-lobby-form').show(); break;
         case 'host_wait' : $('#host_wait').show(); break;
-        case 'game' : $('#game').show(); break;
+        case 'game' : $('#game').show(); $('#header').hide(); break;
         default : break;
     }
     stateStack.push(newState)
@@ -99,6 +99,13 @@ function switchToState(newState) {
 function leaveState(oldState) {
     if (oldState === 'host_wait') {
         client.call('destroyGame')
+    }
+    else if (oldState === 'game') {
+        if (game) {
+            game.destroy()
+        }
+        game = null
+        $('#header').show();
     }
 }
 

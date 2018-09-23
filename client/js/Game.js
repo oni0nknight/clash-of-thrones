@@ -37,6 +37,8 @@ export default class Game {
             debug: null,
             cursors: null
         }
+
+        this.updateGameState = this.updateGameState.bind(this)
     }
 
     initialize(playerName, faction) {
@@ -74,7 +76,7 @@ export default class Game {
         this.gameObjects.field2 = this.game.add.group()
 
         // subscibe to events
-        this.client.subscribe('gameState_push', this.updateGameState.bind(this))
+        this.client.subscribe('gameState_push', this.updateGameState)
 
         // init game state
         this.queryGameState()
@@ -84,8 +86,11 @@ export default class Game {
     }
 
     destroy() {
-        // unsubscibe to events
-        this.client.unsubscibe('gameState_push', this.updateGameState.bind(this))
+        // unsubscribe to events
+        this.client.unsubscribe('gameState_push', this.updateGameState)
+
+        // destroy Phaser game
+        this.game.destroy()
     }
 
 
@@ -95,7 +100,7 @@ export default class Game {
     queryGameState() {
         this.client.query('gameState').then(gs => this.updateGameState(gs))
     }
-    
+
     displayUnit(fieldId, col, row, unit) {
         const xpos = X_OFFSET + col * SPRITE_SIZE
         let ypos = 0
