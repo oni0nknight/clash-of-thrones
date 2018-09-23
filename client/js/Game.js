@@ -8,16 +8,8 @@ import targaryensElite from '../assets/sprites/targaryensElite.png'
 
 const X_OFFSET = 30
 const Y_OFFSET = 379
-const SPRITE_SIZE = {
-    normal: {
-        x: 40,
-        y: 40
-    },
-    elite: {
-        x: 40,
-        y: 80
-    },
-}
+const Y_ENNEMY_OFFSET = 299
+const SPRITE_SIZE = 40
 
 const spriteFrames = {
     green: 0,
@@ -29,16 +21,21 @@ const spriteFrames = {
 }
 
 export default class Game {
-    constructor(client) {
+    constructor(client, isHost) {
         this.game = null
         this.client = client
         
         this.playerName = null
         this.faction = null
 
+        this.fieldId = isHost ? 'field1' : 'field2'
+
         this.gameObjects = {
             frame: null,
-            sprites: []
+            field1: null,
+            field2: null,
+            debug: null,
+            cursors: null
         }
     }
 
@@ -66,12 +63,15 @@ export default class Game {
 
     preload() {
         this.game.load.image('frame', frame)
-        this.game.load.spritesheet('targaryens-normal', targaryensNormal, SPRITE_SIZE.normal.x, SPRITE_SIZE.normal.y)
-        this.game.load.spritesheet('targaryens-elite', targaryensElite, SPRITE_SIZE.elite.x, SPRITE_SIZE.elite.y)
+        this.game.load.spritesheet('targaryens-normal', targaryensNormal, SPRITE_SIZE, SPRITE_SIZE)
+        this.game.load.spritesheet('targaryens-elite', targaryensElite, SPRITE_SIZE, SPRITE_SIZE * 2)
     }
 
     create() {
         this.gameObjects.frame = this.game.add.image(0, 0, 'frame')
+
+        this.gameObjects.field1 = this.game.add.group()
+        this.gameObjects.field2 = this.game.add.group()
 
         // init game state
         this.client.query('gameState').then(gs => this.updateGameState(gs))
@@ -84,11 +84,20 @@ export default class Game {
     // Helpers
     //============================================
 
-    displayUnit(col, row, unit) {
-        const xpos = X_OFFSET + col * SPRITE_SIZE[unit.type].x
-        const ypos = Y_OFFSET + row * SPRITE_SIZE[unit.type].y
+    displayUnit(fieldId, col, row, unit) {
+        const xpos = X_OFFSET + col * SPRITE_SIZE
+        let ypos = 0
+        if (fieldId === this.fieldId) {
+            // field of the player
+            ypos = Y_OFFSET + row * SPRITE_SIZE
+        }
+        else {
+            // field of the ennemy
+            ypos = Y_ENNEMY_OFFSET - row * SPRITE_SIZE
+        }
+
         const spritesheet = this.faction + '-' + unit.type
-        this.gameObjects.sprites.push(this.game.add.sprite(xpos, ypos, spritesheet, spriteFrames[unit.color]))
+        this.gameObjects[fieldId].create(xpos, ypos, spritesheet, spriteFrames[unit.color])
     }
 
     // Events
@@ -96,17 +105,28 @@ export default class Game {
 
     updateGameState(gameState = {}) {
         console.log('received a new state : ', gameState)
+        const fieldIds = ['field1', 'field2']
 
-        // destroy every sprite
-        this.gameObjects.sprites.forEach(s => s.destroy())
+        fieldIds.forEach(fieldId => {
+            // destroy every sprite
+            this.gameObjects[fieldId].removeAll(true)
 
-        // rebuild all sprites
-        let currentRow = 0
-        gameState.field1.grid.forEach((col, colId) => {
-            currentRow = 0
-            col.forEach(unit => {
-                this.displayUnit(colId, currentRow, unit)
-                currentRow += unit.size
+            // rebuild all sprites
+            gameState[fieldId].grid.forEach((col, colId) => {
+                let currentRow = 0
+                if (fieldId !== this.fieldId && col[0]) {
+                    currentRow = col[0].size - 1
+                }
+                col.forEach((unit, idx) => {
+                    this.displayUnit(fieldId, colId, currentRow, unit)
+
+                    if (fieldId === this.fieldId) {
+                        currentRow += unit.size
+                    }
+                    else if (fieldId !== this.fieldId && col[idx+1]) {
+                        currentRow += col[idx+1].size
+                    }
+                })
             })
         })
     }

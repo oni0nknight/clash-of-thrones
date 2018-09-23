@@ -3,7 +3,7 @@ import $ from 'jquery'
 import Client from './js/Client'
 
 const client = new Client()
-const game = new Game(client)
+let game = null
 const stateStack = []
 let isHost = false
 
@@ -59,7 +59,7 @@ function bindEvents() {
             switchToState('host_wait')
 
             // subscibe to event
-            client.subscribe('gameReady', launchGame)
+            client.subscribe('gameReady', launchGameAsHost)
         }
     })
 
@@ -68,7 +68,7 @@ function bindEvents() {
         form.addClass('was-validated')
         if (form[0].checkValidity()) {
             // subscibe to event
-            client.subscribe('gameReady', launchGame)
+            client.subscribe('gameReady', launchGameAsJoin)
 
             // join game
             client.call('joinGame', $('#gameSelect option:selected').val())
@@ -97,32 +97,48 @@ function switchToState(newState) {
 }
 
 function leaveState(oldState) {
-    switch (oldState) {
-        case 'host_wait' : client.call('destroyGame')
-        case 'game' : client.unsubscribe('gameState_push', game.updateGameState.bind(game))
-        default : break;
+    if (oldState === 'host_wait') {
+        client.call('destroyGame')
+    }
+    else if (oldState === 'game') {
+        if (game) {
+            client.unsubscribe('gameState_push', game.updateGameState.bind(game))
+        }
     }
 }
 
+function launchGameAsHost() {
+    client.unsubscribe('gameReady', launchGameAsHost)
+    game = new Game(client, true)
+    launchGame()
+}
+
+function launchGameAsJoin() {
+    client.unsubscribe('gameReady', launchGameAsJoin)
+    game = new Game(client, false)
+    launchGame()
+}
+
 function launchGame() {
-    client.unsubscribe('gameReady', launchGame)
+    if (game) {
+        // initialize phaser game
+        game.initialize($('#playerName').val(), $('#factionSelect').val())
 
-    // initialize phaser game
-    game.initialize($('#playerName').val(), $('#factionSelect').val())
+        // display game
+        switchToState('game')
 
-    // display game
-    switchToState('game')
+        // subscibe to events
+        client.subscribe('gameState_push', game.updateGameState.bind(game))
 
-    // subscibe to events
-    client.subscribe('gameState_push', game.updateGameState.bind(game))
+        // send start game event
+        if (isHost) {
+            client.call('startGame')
+        }
 
-    // send start game event
-    if (isHost) {
-        client.call('startGame')
+        // DEBUG
+        $('#test_btn').text('query game state')
+        $('#test_btn').on('click', e => {
+            client.query('gameState').then(gs => game.updateGameState(gs))
+        })
     }
-
-    // DEBUG
-    $('#test_btn').on('click', e => {
-        client.query('gameState').then(gs => game.updateGameState(gs))
-    })
 }
