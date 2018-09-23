@@ -4,7 +4,7 @@ const helpers = require('./Helpers')
 const Logger = require('../Logger/Logger')
 const gameData = require('../../assets/data.json')
 
-const bindSocket = (socket, players, games) => {
+const bindSocket = (io, socket, players, games) => {
 
     socket.on('pendingGames', () => {
         Logger.log(socket.id, 'requesting pending games')

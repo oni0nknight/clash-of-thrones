@@ -56,10 +56,10 @@ io.on('connection', socket =>
 {
     console.log(socket.id + ' :: ' + 'new connection !')
 
-    lifecycleHandler.bindSocket(socket, players, games)
-    queriesHandler.bindSocket(socket, players, games)
-    gameHandler.bindSocket(socket, players, games)
-    playHandler.bindSocket(socket, players, games)
+    lifecycleHandler.bindSocket(io, socket, players, games)
+    queriesHandler.bindSocket(io, socket, players, games)
+    gameHandler.bindSocket(io, socket, players, games)
+    playHandler.bindSocket(io, socket, players, games)
 });
 
 server.listen(8080)

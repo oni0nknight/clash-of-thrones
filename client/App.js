@@ -42,6 +42,7 @@ function bindEvents() {
             } else {
                 isHost = false
                 switchToState('join_lobby')
+                client.subscribe('gameListUpdated', updatePendingGames)
             }
         }
     })
@@ -69,8 +70,6 @@ function bindEvents() {
             client.call('joinGame', $('#gameSelect option:selected').val())
         }
     })
-
-    $('#join-lobby-form button[data-action="reload_lobby"]').on('click', updatePendingGames)
 
     $('button[data-action="back"]').on('click', (e) => {
         const oldState = stateStack.pop()
@@ -105,9 +104,15 @@ function switchToState(newState) {
 
 function leaveState(oldState) {
     if (oldState === 'host_wait') {
-        client.call('leaveGame')
+        client.unsubscribe('gameReady', launchGameAsHost)
+        client.call('leaveGame') // destroy the created game on the server
+    }
+    else if (oldState === 'join_lobby') {
+        client.unsubscribe('gameListUpdated', updatePendingGames)
     }
     else if (oldState === 'game') {
+        client.unsubscribe('gameDestroyed', onGameDestroyed)
+
         // destroy local game
         destroyGame()
         
@@ -159,8 +164,6 @@ function onGameDestroyed() {
 }
 
 function destroyGame() {
-    client.unsubscribe('gameDestroyed', onGameDestroyed)
-
     if (game) {
         game.destroy()
     }

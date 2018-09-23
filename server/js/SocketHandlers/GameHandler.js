@@ -3,7 +3,7 @@
 const helpers = require('./Helpers')
 const Logger = require('../Logger/Logger')
 
-const bindSocket = (socket, players, games) => {
+const bindSocket = (io, socket, players, games) => {
 
     socket.on('createGame', (gameName) => {
         Logger.log(socket.id, 'requesting to create game ' + gameName)
@@ -30,6 +30,9 @@ const bindSocket = (socket, players, games) => {
 
             // add a reference to it in player structure
             players[socket.id].gameId = game.id
+
+            // notify all the players
+            io.emit('gameListUpdated')
         }
         else {
             helpers.sendError(socket, 'Cannot create a game. You already are registered in a game.')
@@ -69,13 +72,13 @@ const bindSocket = (socket, players, games) => {
         }
         Logger.log(socket.id, 'leaving game')
     
-        destroyGame(socket, players, games)
+        destroyGame(io, socket, players, games)
     })
 
 }
 
 
-const destroyGame = (socket, players, games) => {
+const destroyGame = (io, socket, players, games) => {
     const game = games.find(g => g.id === players[socket.id].gameId)
 
     if (game) {
@@ -96,6 +99,9 @@ const destroyGame = (socket, players, games) => {
 
         Logger.log(socket.id, 'new games list : ')
         Logger.log(socket.id, games)
+
+        // notify all the players
+        io.emit('gameListUpdated')
     }
 }
 

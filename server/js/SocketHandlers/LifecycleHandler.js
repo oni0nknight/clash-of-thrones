@@ -8,7 +8,7 @@ const GameHandler = require('./GameHandler')
 
 let uniqueID = 0
 
-const bindSocket = (socket, players, games) => {
+const bindSocket = (io, socket, players, games) => {
 
     socket.on('register', (data) => {
         Logger.log(socket.id, 'requesting to register player ' + data.name + ' with faction ' + data.faction)
@@ -30,7 +30,7 @@ const bindSocket = (socket, players, games) => {
 
     socket.on('disconnect', () => {
         if (players[socket.id]) {
-            GameHandler.destroyGame(socket, players, games)
+            GameHandler.destroyGame(io, socket, players, games)
         }
         delete players[socket.id]
     })

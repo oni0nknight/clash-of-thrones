@@ -5,7 +5,7 @@ const Logger = require('../Logger/Logger')
 
 const Game = require('../GameElements/Game')
 
-const bindSocket = (socket, players, games) => {
+const bindSocket = (io, socket, players, games) => {
     
     socket.on('startGame', () => {
         Logger.log(socket.id, 'requesting to start game')
