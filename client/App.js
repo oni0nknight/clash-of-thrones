@@ -3,8 +3,9 @@ import $ from 'jquery'
 import Client from './js/Client'
 
 const client = new Client()
+client.subscribe('err', errorHandler)
 let game = null
-const stateStack = []
+let stateStack = []
 let isHost = false
 
 window.onload = () => {
@@ -39,12 +40,6 @@ function bindEvents() {
                 isHost = true
                 switchToState('host_lobby')
             } else {
-                // fill the available games list
-                client.query('pendingGames').then(pendingGames => {
-                    $('#gameSelect').html(pendingGames.map(pendingGame => {
-                        return '<option value="'+pendingGame.id+'">' + pendingGame.gameName + '</option>'
-                    }))
-                })
                 isHost = false
                 switchToState('join_lobby')
             }
@@ -75,6 +70,8 @@ function bindEvents() {
         }
     })
 
+    $('#join-lobby-form button[data-action="reload_lobby"]').on('click', updatePendingGames)
+
     $('button[data-action="back"]').on('click', (e) => {
         const oldState = stateStack.pop()
         leaveState(oldState)
@@ -83,12 +80,22 @@ function bindEvents() {
     })
 }
 
+function updatePendingGames() {
+    // fill the available games list
+    client.query('pendingGames').then(pendingGames => {
+        $('#gameSelect').html(pendingGames.map(pendingGame => {
+            return '<option value="'+pendingGame.id+'">' + pendingGame.gameName + '</option>'
+        }))
+    })
+}
+
 function switchToState(newState) {
     $('.view').hide()
+    $('#header').show()
     switch (newState) {
         case 'init' : $('#init-form').show(); break;
         case 'host_lobby' : $('#host-lobby-form').show(); break;
-        case 'join_lobby' : $('#join-lobby-form').show(); break;
+        case 'join_lobby' : $('#join-lobby-form').show(); updatePendingGames(); break;
         case 'host_wait' : $('#host_wait').show(); break;
         case 'game' : $('#game').show(); $('#header').hide(); break;
         default : break;
@@ -98,14 +105,15 @@ function switchToState(newState) {
 
 function leaveState(oldState) {
     if (oldState === 'host_wait') {
-        client.call('destroyGame')
+        client.call('leaveGame')
     }
     else if (oldState === 'game') {
-        if (game) {
-            game.destroy()
-        }
-        game = null
-        $('#header').show();
+        // destroy local game
+        destroyGame()
+        
+        // update the statestack & go to lobby
+        stateStack = ['init']
+        switchToState(isHost ? 'host_lobby' : 'join_lobby')
     }
 }
 
@@ -123,11 +131,14 @@ function launchGameAsJoin() {
 
 function launchGame() {
     if (game) {
+        // display game
+        // /!\ : must be called before game.initialize (game needs a visible parent node)
+        switchToState('game')
+
         // initialize phaser game
         game.initialize($('#playerName').val(), $('#factionSelect').val())
 
-        // display game
-        switchToState('game')
+        client.subscribe('gameDestroyed', onGameDestroyed)
 
         // send start game event
         if (isHost) {
@@ -140,4 +151,26 @@ function launchGame() {
             client.call('resetGame')
         })
     }
+}
+
+function onGameDestroyed() {
+    leaveState('game')
+    alert('the other player left the game')
+}
+
+function destroyGame() {
+    client.unsubscribe('gameDestroyed', onGameDestroyed)
+
+    if (game) {
+        game.destroy()
+    }
+    game = null
+}
+
+
+// Error handling
+//=====================================
+
+function errorHandler(error) {
+    console.error(error.code, '::', error.msg)
 }

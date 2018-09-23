@@ -61,43 +61,41 @@ const bindSocket = (socket, players, games) => {
         }
     })
 
-    socket.on('destroyGame', () => {
-        Logger.log(socket.id, 'requesting to destroy game')
+    socket.on('leaveGame', () => {
+        Logger.log(socket.id, 'requesting to leave game')
         const context = getReqContext(socket, players, games)
         if (!context) {
             return
         }
-
+        Logger.log(socket.id, 'leaving game')
+    
         destroyGame(socket, players, games)
     })
+
 }
 
+
 const destroyGame = (socket, players, games) => {
-    if (hasGame(socket, players))
-    {
-        // retrieve game infos before removing
-        const game = games.find(g => g.id === players[socket.id].gameId)
+    const game = games.find(g => g.id === players[socket.id].gameId)
 
-        if (game && game.playerId === socket.id) {
-            Logger.log(socket.id, 'destroying game ' + game.gameName)
+    if (game) {
+        Logger.log(socket.id, 'destroying game ' + game.gameName)
 
-            // remove game from games list
-            games.splice(games.indexOf(game), 1)
+        // remove game from games list
+        games.splice(games.indexOf(game), 1)
 
-            // remove the reference in player structure
-            players[socket.id].gameId = null
-
-            // Notify both players that the game is destroyed
-            socket.emit('gameDestroyed')
-            if (game.joinedPlayerId != null && players[game.joinedPlayerId]) {
-                players[game.joinedPlayerId].socket.emit('gameDestroyed')
-            }
-
-            Logger.log(socket.id, 'new games list : ')
-            Logger.log(socket.id, games)
-        } else {
-            helpers.sendError(socket, 'You do not have the permission required for this action')
+        // remove the reference in player structure & notify them
+        if (game.playerId != null && players[game.playerId]) {
+            players[game.playerId].gameId = null
+            players[game.playerId].socket.emit('gameDestroyed')
         }
+        if (game.joinedPlayerId != null && players[game.joinedPlayerId]) {
+            players[game.joinedPlayerId].gameId = null
+            players[game.joinedPlayerId].socket.emit('gameDestroyed')
+        }
+
+        Logger.log(socket.id, 'new games list : ')
+        Logger.log(socket.id, games)
     }
 }
 

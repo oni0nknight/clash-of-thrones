@@ -89,6 +89,9 @@ export default class Game {
         // unsubscribe to events
         this.client.unsubscribe('gameState_push', this.updateGameState)
 
+        // warn the server
+        this.client.call('leaveGame')
+
         // destroy Phaser game
         this.game.destroy()
     }

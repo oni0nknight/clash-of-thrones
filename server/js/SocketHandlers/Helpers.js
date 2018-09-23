@@ -1,12 +1,18 @@
 'use strict'
 
 const Logger = require('../Logger/Logger')
+const ErrorCodes = require('../ErrorCodes')
 
 const Helpers = {
     
-    sendError(socket, errorMessage) {
+    sendError(socket, errorCode) {
+        const errorMsg = ErrorCodes.get(errorCode)
         Logger.error(socket.id, 'ERROR => ' + errorMessage)
-        socket.emit('err', errorMessage)
+        
+        socket.emit('err', {
+            code: errorCode,
+            msg: errorMsg
+        })
     },
     
     generateUUID() {
