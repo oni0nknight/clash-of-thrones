@@ -18,18 +18,19 @@ const bindSocket = (socket, players, games) => {
 
         // player must be host to perform this action
         if (game.playerId === socket.id) {
-            const hostPlayer = players[socket.id]
+            const hostPlayer = players[game.playerId]
             const joinedPlayer = players[game.joinedPlayerId]
             
             // initialize game
-            const gameObj = new Game(7, 7, hostPlayer.faction, joinedPlayer.faction, 8)
-    
-            // keep track of it in game structure
-            game.gameInstance = gameObj
+            game.gameInstance = new Game(7, 7, hostPlayer.faction, joinedPlayer.faction, 8)
         } else {
             helpers.sendError(socket, 'You do not have the permission required for this action')
         }
     })
+
+
+    // DEBUG COMMANDS
+    //=======================================
 
     socket.on('changeTurn', () => {
         Logger.log(socket.id, 'requesting to change turn')
@@ -40,6 +41,23 @@ const bindSocket = (socket, players, games) => {
 
         const game = getCurrentGame(socket, players, games)
         game.gameInstance.changeTurn()
+        updateGameState(players, game)
+    })
+
+    socket.on('resetGame', () => {
+        Logger.log(socket.id, 'requesting to reset game')
+        if (!requestValid(socket, players, games)) {
+            return;
+        }
+        Logger.log(socket.id, 'reseting game')
+
+        const game = getCurrentGame(socket, players, games)
+        const hostPlayer = players[game.playerId]
+        const joinedPlayer = players[game.joinedPlayerId]
+        
+        // re-initialize game
+        game.gameInstance = new Game(7, 7, hostPlayer.faction, joinedPlayer.faction, 8)
+        updateGameState(players, game)
     })
 }
 
