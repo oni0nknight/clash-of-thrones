@@ -3,20 +3,29 @@ window.p2     = require('phaser-ce/build/custom/p2')
 window.Phaser = require('phaser-ce/build/custom/phaser-split')
 
 import frame from '../assets/frame.png'
-import targaryens from '../assets/sprites/targaryens.png'
+import targaryensNormal from '../assets/sprites/targaryensNormal.png'
+import targaryensElite from '../assets/sprites/targaryensElite.png'
 
-const X_OFFSET = 49
-const Y_OFFSET = 663
-const SPRITE_SIZE = 72
-const SPRITE_MARGIN = 8
+const X_OFFSET = 30
+const Y_OFFSET = 379
+const SPRITE_SIZE = {
+    normal: {
+        x: 40,
+        y: 40
+    },
+    elite: {
+        x: 40,
+        y: 80
+    },
+}
 
 const spriteFrames = {
-    red: 0,
-    blue: 1,
-    green: 2,
+    green: 0,
+    red: 1,
+    blue: 2,
     yellow: 3,
-    purple: 4,
-    orange: 5
+    white: 4,
+    purple: 5
 }
 
 export default class Game {
@@ -57,12 +66,14 @@ export default class Game {
 
     preload() {
         this.game.load.image('frame', frame)
-        this.game.load.spritesheet('targaryens', targaryens, SPRITE_SIZE, SPRITE_SIZE, -1, SPRITE_MARGIN, SPRITE_MARGIN)
+        this.game.load.spritesheet('targaryens-normal', targaryensNormal, SPRITE_SIZE.normal.x, SPRITE_SIZE.normal.y)
+        this.game.load.spritesheet('targaryens-elite', targaryensElite, SPRITE_SIZE.elite.x, SPRITE_SIZE.elite.y)
     }
 
     create() {
         this.gameObjects.frame = this.game.add.image(0, 0, 'frame')
 
+        // init game state
         this.client.query('gameState').then(gs => this.updateGameState(gs))
     }
 
@@ -74,9 +85,10 @@ export default class Game {
     //============================================
 
     displayUnit(col, row, unit) {
-        const xpos = X_OFFSET + col * (SPRITE_SIZE + SPRITE_MARGIN)
-        const ypos = Y_OFFSET + row * (SPRITE_SIZE + SPRITE_MARGIN)
-        this.gameObjects.sprites.push(this.game.add.sprite(xpos, ypos, this.faction, spriteFrames[unit.color]))
+        const xpos = X_OFFSET + col * SPRITE_SIZE[unit.type].x
+        const ypos = Y_OFFSET + row * SPRITE_SIZE[unit.type].y
+        const spritesheet = this.faction + '-' + unit.type
+        this.gameObjects.sprites.push(this.game.add.sprite(xpos, ypos, spritesheet, spriteFrames[unit.color]))
     }
 
     // Events

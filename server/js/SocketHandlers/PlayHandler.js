@@ -22,7 +22,7 @@ const bindSocket = (socket, players, games) => {
             const joinedPlayer = players[game.joinedPlayerId]
             
             // initialize game
-            const gameObj = new Game(7, 6, hostPlayer.faction, joinedPlayer.faction, 8)
+            const gameObj = new Game(7, 7, hostPlayer.faction, joinedPlayer.faction, 8)
     
             // keep track of it in game structure
             game.gameInstance = gameObj
