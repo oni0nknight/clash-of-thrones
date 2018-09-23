@@ -5,7 +5,7 @@ const Logger = require('../Logger/Logger')
 const Helpers = {
     
     sendError(socket, errorMessage) {
-        Logger.error(socket.id, 'ERR : ' + errorMessage)
+        Logger.error(socket.id, 'ERROR => ' + errorMessage)
         socket.emit('err', errorMessage)
     },
     

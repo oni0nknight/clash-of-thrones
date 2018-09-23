@@ -1,15 +1,15 @@
 'use strict'
 
 module.exports = {
-    log(...args) {
-        console.log(...args)
+    log(socketId, ...args) {
+        console.log(socketId, '::', ...args)
     },
 
-    warn(...args) {
-        console.warn(...args)
+    warn(socketId, ...args) {
+        console.warn(socketId, '::', ...args)
     },
 
-    error(...args) {
-        console.error(...args)
+    error(socketId, ...args) {
+        console.error(socketId, '::', ...args)
     }
 }
