@@ -38,10 +38,7 @@ const bindSocket = (socket, players, games) => {
         Logger.log(socket.id, 'fetching game state')
 
         const game = getCurrentGame(socket, players, games)
-
-        // player must be host to perform this action
         if (game && game.gameInstance) {
-            // send the game state to the 2 players
             const gameState = game.gameInstance.serialize()
             socket.emit('gameState_response', gameState)
         }

@@ -81,6 +81,16 @@ const requestValid = (socket, players, games) => {
     return true
 }
 
+const updateGameState = (players, game) => {
+    if (game && game.gameInstance) {
+        const gameState = game.gameInstance.serialize()
+
+        // send the game state to the 2 players
+        players[game.playerId].socket.emit('gameState_push', gameState)
+        players[game.joinedPlayerId].socket.emit('gameState_push', gameState)
+    }
+}
+
 module.exports = {
     bindSocket
 }
