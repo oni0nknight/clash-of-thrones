@@ -7,11 +7,14 @@ const bindSocket = (socket, players, games) => {
 
     socket.on('createGame', (gameName) => {
         Logger.log(socket.id, 'requesting to create game ' + gameName)
-        if (!requestValid(socket, players, games)) {
-            return;
+        const context = getReqContext(socket, players, games)
+        if (!context) {
+            return
         }
 
         if (players[socket.id].gameId == null) {
+            Logger.log(socket.id, 'creating the game ' + gameName)
+
             // create the game
             const game = {
                 id: helpers.generateUUID(),
@@ -35,13 +38,16 @@ const bindSocket = (socket, players, games) => {
 
     socket.on('joinGame', (gameId) => {
         Logger.log(socket.id, 'requesting to join game ' + gameId)
-        if (!requestValid(socket, players, games)) {
-            return;
+        const context = getReqContext(socket, players, games)
+        if (!context) {
+            return
         }
 
         const game = games.find(g => g.id === gameId)
         if (game && !hasGame(socket, players) && game.playerId != null && players[game.playerId])
         {
+            Logger.log(socket.id, 'joining the game ' + gameId)
+
             // join the game
             game.joinedPlayerId = socket.id
             players[socket.id].gameId = game.id
@@ -57,8 +63,9 @@ const bindSocket = (socket, players, games) => {
 
     socket.on('destroyGame', () => {
         Logger.log(socket.id, 'requesting to destroy game')
-        if (!requestValid(socket, players, games)) {
-            return;
+        const context = getReqContext(socket, players, games)
+        if (!context) {
+            return
         }
 
         destroyGame(socket, players, games)
@@ -94,13 +101,21 @@ const destroyGame = (socket, players, games) => {
     }
 }
 
-const requestValid = (socket, players, games) => {
+/**
+ * Returns the request context if the request is valid, null otherwise. It also displays server logs if there are errors
+ * @param {socket} socket
+ * @param {Object.<string, PlayerObj>} players all players
+ * @param {Array.<GameObj>} games array of all games
+ * @returns {object} the context
+ */
+const getReqContext = (socket, players, games) => {
     // check if player exists
     if (!players[socket.id]) {
         helpers.sendError(socket, 'Player must be registered to use this feature')
-        return false;
+        return null;
     }
-    return true
+
+    return {}
 }
 
 const hasGame = (socket, players) => {

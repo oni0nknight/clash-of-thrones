@@ -32,39 +32,46 @@ const bindSocket = (socket, players, games) => {
 
     socket.on('gameState', () => {
         Logger.log(socket.id, 'requesting game state')
-        if (!requestValid(socket, players, games)) {
-            return;
+        const context = getReqContext(socket, players, games)
+        if (!context) {
+            return
         }
-        Logger.log(socket.id, 'fetching game state')
 
-        const game = getCurrentGame(socket, players, games)
-        if (game && game.gameInstance) {
-            const gameState = game.gameInstance.serialize()
+        if (context.gameStarted) {
+            Logger.log(socket.id, 'fetching game state')
+            
+            const gameState = context.game.gameInstance.serialize()
             socket.emit('gameState_response', gameState)
         }
     })
 }
 
-const getCurrentGame = (socket, players, games) => {
-    return games.find(g => g.id === players[socket.id].gameId)
-}
 
-const requestValid = (socket, players, games) => {
+/**
+ * Returns the request context if the request is valid, null otherwise. It also displays server logs if there are errors
+ * @param {socket} socket
+ * @param {Object.<string, PlayerObj>} players all players
+ * @param {Array.<GameObj>} games array of all games
+ * @returns {object} the context
+ */
+const getReqContext = (socket, players, games) => {
     // check if player exists
     if (!players[socket.id]) {
         helpers.sendError(socket, 'Player must be registered to use this feature')
-        return false;
+        return null;
     }
 
-    const game = getCurrentGame(socket, players, games)
+    const game = games.find(g => g.id === players[socket.id].gameId)
 
     // check if player is in a game
-    if (!players[socket.id].gameId || !game) {
+    if (!game) {
         helpers.sendError(socket, 'Must host or join a game first')
-        return false
+        return null
     }
 
-    return true
+    const gameStarted = !!game.gameInstance
+
+    return { game, gameStarted }
 }
 
 module.exports = {
