@@ -21,7 +21,7 @@ const bindSocket = (socket, players, games) => {
         // player must be host to perform this action
         if (context.game.playerId === socket.id) {
             Logger.log(socket.id, 'starting game')
-            
+
             const hostPlayer = players[context.game.playerId]
             const joinedPlayer = players[context.game.joinedPlayerId]
             context.game.gameInstance = new Game(7, 7, hostPlayer.faction, joinedPlayer.faction, 8)
@@ -92,7 +92,7 @@ const getReqContext = (socket, players, games) => {
  */
 const updateGameState = (game, players) => {
     if (game && game.gameInstance) {
-        Logger.log('X', 'pushing new game state for the 2 players')
+        Logger.log('default', 'pushing new game state for the 2 players')
         const gameState = game.gameInstance.serialize()
 
         // send the game state to the 2 players
