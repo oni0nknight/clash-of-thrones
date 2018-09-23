@@ -100,11 +100,6 @@ function leaveState(oldState) {
     if (oldState === 'host_wait') {
         client.call('destroyGame')
     }
-    else if (oldState === 'game') {
-        if (game) {
-            client.unsubscribe('gameState_push', game.updateGameState.bind(game))
-        }
-    }
 }
 
 function launchGameAsHost() {
@@ -126,9 +121,6 @@ function launchGame() {
 
         // display game
         switchToState('game')
-
-        // subscibe to events
-        client.subscribe('gameState_push', game.updateGameState.bind(game))
 
         // send start game event
         if (isHost) {

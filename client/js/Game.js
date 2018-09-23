@@ -73,17 +73,29 @@ export default class Game {
         this.gameObjects.field1 = this.game.add.group()
         this.gameObjects.field2 = this.game.add.group()
 
+        // subscibe to events
+        this.client.subscribe('gameState_push', this.updateGameState.bind(this))
+
         // init game state
-        this.client.query('gameState').then(gs => this.updateGameState(gs))
+        this.queryGameState()
     }
 
     update() {
+    }
+
+    destroy() {
+        // unsubscibe to events
+        this.client.unsubscibe('gameState_push', this.updateGameState.bind(this))
     }
 
 
     // Helpers
     //============================================
 
+    queryGameState() {
+        this.client.query('gameState').then(gs => this.updateGameState(gs))
+    }
+    
     displayUnit(fieldId, col, row, unit) {
         const xpos = X_OFFSET + col * SPRITE_SIZE
         let ypos = 0
