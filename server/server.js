@@ -32,7 +32,24 @@ app.get('/server-test', (req, res) => {
 // Socket.io server
 //=================================================
 
+/**
+ * @typedef {Object} GameObj
+ * @property {string} id game unique ID
+ * @property {string} playerId socket ID of the host player
+ * @property {string} playerName name of the host player
+ * @property {string} gameName game name
+ * @property {string} joinedPlayerId socket ID of the join player
+ * @property {(Game|null)} gameInstance the Game instance. null if not started
+ */
 let games = []
+
+/**
+ * @typedef {Object} PlayerObj
+ * @property {socket} socket the players's io socket
+ * @property {string} name the players's name
+ * @property {string} socket the players's faction
+ * @property {(string|null)} socket the players's game id
+ */
 let players = {}
 
 io.on('connection', socket => 

@@ -43,14 +43,34 @@ const bindSocket = (socket, players, games) => {
     })
 }
 
+/**
+ * return true if it is the player's turn. false otherwise
+ * @param {socket} socket
+ * @param {GameObj} game the current game
+ * @returns {Boolean}
+ */
 const isMyTurn = (socket, game) => {
     return (!game.gameInstance) || (game.gameInstance.turn === 1 && game.playerId === socket.id) || (game.gameInstance.turn === 2 && game.joinedPlayerId === socket.id)
 }
 
+/**
+ * Get the current game of the player. If not in a game, return null
+ * @param {socket} socket
+ * @param {Object.<string, PlayerObj>} players all players
+ * @param {Array.<GameObj>} games array of all games
+ * @returns {GameObj} the game of the player
+ */
 const getCurrentGame = (socket, players, games) => {
     return games.find(g => g.id === players[socket.id].gameId)
 }
 
+/**
+ * Returns true if the request is valid, false otherwise. It also displays server logs if there is an error
+ * @param {socket} socket
+ * @param {Object.<string, PlayerObj>} players all players
+ * @param {Array.<GameObj>} games array of all games
+ * @returns {Boolean}
+ */
 const requestValid = (socket, players, games) => {
     // check if player exists
     if (!players[socket.id]) {
@@ -81,6 +101,11 @@ const requestValid = (socket, players, games) => {
     return true
 }
 
+/**
+ * Generate a new up-to-date state for the given game, and push it to the 2 client players
+ * @param {Object.<string, PlayerObj>} players all players
+ * @param {GameObj} game the game for which we want to update the state
+ */
 const updateGameState = (players, game) => {
     if (game && game.gameInstance) {
         const gameState = game.gameInstance.serialize()
