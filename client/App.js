@@ -136,9 +136,9 @@ function launchGame() {
         }
 
         // DEBUG
-        $('#test_btn').text('query game state')
+        $('#test_btn').text('reset game')
         $('#test_btn').on('click', e => {
-            client.query('gameState').then(gs => game.updateGameState(gs))
+            client.call('resetGame')
         })
     }
 }
