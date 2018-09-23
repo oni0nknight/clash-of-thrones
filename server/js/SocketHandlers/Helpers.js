@@ -7,7 +7,7 @@ const Helpers = {
     
     sendError(socket, errorCode) {
         const errorMsg = ErrorCodes.get(errorCode)
-        Logger.error(socket.id, 'ERROR => ' + errorMessage)
+        Logger.error(socket.id, 'ERROR => ' + errorMsg)
         
         socket.emit('err', {
             code: errorCode,

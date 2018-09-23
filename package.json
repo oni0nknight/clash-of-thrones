@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "start-server": "nodemon server/server.js --exec node",
-    "build-client": "parcel build client/*.html -d client/dist",
+    "prebuild-client": "rm -rf client/dist",
+    "build-client": " && parcel build client/*.html -d client/dist",
+    "prestart-client": "rm -rf client/dist",
     "start-client": "parcel client/*.html -d client/dist"
   },
   "author": "Theophile Gindre",
