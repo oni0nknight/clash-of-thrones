@@ -1,8 +1,10 @@
 'use strict'
 
+const HEXA_BASE = 16
+
 function _generateUUID() {
     return 'xxxxxxxx-0xxx-xxxxxxxx'.replace(/[x]/g, () => {
-        return (Math.random() * 16 | 0).toString(16)
+        return (Math.random() * HEXA_BASE | 0).toString(HEXA_BASE)
     })
 }
 

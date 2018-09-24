@@ -12,7 +12,7 @@ const bindSocket = (io, socket, players, games) => {
             return
         }
 
-        if (players[socket.id].gameId == null) {
+        if (players[socket.id].gameId === null) {
             Logger.log(socket.id, 'creating the game ' + gameName)
 
             // create the game
@@ -20,7 +20,7 @@ const bindSocket = (io, socket, players, games) => {
                 id: helpers.generateUUID(),
                 playerId: socket.id,
                 playerName: players[socket.id].name,
-                gameName: gameName,
+                gameName,
                 joinedPlayerId: null,
                 gameInstance: null
             }
@@ -47,7 +47,7 @@ const bindSocket = (io, socket, players, games) => {
         }
 
         const game = games.find(g => g.id === gameId)
-        if (game && !hasGame(socket, players) && game.playerId != null && players[game.playerId])
+        if (game && !hasGame(socket, players) && game.playerId !== null && players[game.playerId])
         {
             Logger.log(socket.id, 'joining the game ' + gameId)
 
@@ -88,11 +88,11 @@ const destroyGame = (io, socket, players, games) => {
         games.splice(games.indexOf(game), 1)
 
         // remove the reference in player structure & notify them
-        if (game.playerId != null && players[game.playerId]) {
+        if (game.playerId !== null && players[game.playerId]) {
             players[game.playerId].gameId = null
             players[game.playerId].socket.emit('gameDestroyed')
         }
-        if (game.joinedPlayerId != null && players[game.joinedPlayerId]) {
+        if (game.joinedPlayerId !== null && players[game.joinedPlayerId]) {
             players[game.joinedPlayerId].gameId = null
             players[game.joinedPlayerId].socket.emit('gameDestroyed')
         }
@@ -116,14 +116,14 @@ const getReqContext = (socket, players, games) => {
     // check if player exists
     if (!players[socket.id]) {
         helpers.sendError(socket, 'Player must be registered to use this feature')
-        return null;
+        return null
     }
 
     return {}
 }
 
 const hasGame = (socket, players) => {
-    return players[socket.id].gameId != null
+    return players[socket.id].gameId !== null
 }
 
 module.exports = {

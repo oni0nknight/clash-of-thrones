@@ -1,5 +1,5 @@
-window.PIXI   = require('phaser-ce/build/custom/pixi')
-window.p2     = require('phaser-ce/build/custom/p2')
+window.PIXI = require('phaser-ce/build/custom/pixi')
+window.p2 = require('phaser-ce/build/custom/p2')
 window.Phaser = require('phaser-ce/build/custom/phaser-split')
 
 import frame from '../assets/frame.png'
@@ -50,12 +50,12 @@ export default class Game {
             parent: 'game',
             width: '100',
             height: '100',
-            state: { 
+            state: {
                 preload: this.preload.bind(this),
                 create: this.create.bind(this),
                 update: this.update.bind(this)
             }
-        };
+        }
            
         this.game = new Phaser.Game(config)
     }

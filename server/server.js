@@ -8,6 +8,9 @@ const queriesHandler = require('./js/SocketHandlers/queriesHandler')
 const gameHandler = require('./js/SocketHandlers/GameHandler')
 const playHandler = require('./js/SocketHandlers/PlayHandler')
 
+const Logger = require('./js/Logger/Logger')
+
+const SERVER_PORT = 8080
 
 // Express routing
 //=================================================
@@ -20,12 +23,7 @@ app.get('/', (req, res) => {
 
 // express routing for the test route (useful during dev)
 app.get('/server-test', (req, res) => {
-    const Game = require('./js/GameElements/Game')
-    const gameData = require('./assets/data.json')
-
-    const factions = gameData.factions
-    const game = new Game(7, 6, factions[0], factions[0], 8)
-    res.send(game.serialize())
+    res.send('use this route to make tests')
 })
 
 
@@ -41,7 +39,7 @@ app.get('/server-test', (req, res) => {
  * @property {string} joinedPlayerId socket ID of the join player
  * @property {(Game|null)} gameInstance the Game instance. null if not started
  */
-let games = []
+const games = []
 
 /**
  * @typedef {Object} PlayerObj
@@ -50,17 +48,17 @@ let games = []
  * @property {string} socket the players's faction
  * @property {(string|null)} socket the players's game id
  */
-let players = {}
+const players = {}
 
 io.on('connection', socket =>
 {
-    console.log(socket.id + ' :: ' + 'new connection !')
+    Logger.log(socket.id, 'new connection !')
 
     lifecycleHandler.bindSocket(io, socket, players, games)
     queriesHandler.bindSocket(io, socket, players, games)
     gameHandler.bindSocket(io, socket, players, games)
     playHandler.bindSocket(io, socket, players, games)
-});
+})
 
-server.listen(8080)
-console.log('Server running at localhost:8080/')
+server.listen(SERVER_PORT)
+Logger.log('SERVER', 'Server running at localhost:8080/')

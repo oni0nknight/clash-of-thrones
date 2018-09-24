@@ -8,7 +8,7 @@ module.exports = {
         const faction = data.factions.find(f => f.id === factionId)
         let factionInfos = null
         if (faction) {
-            factionInfos = {   
+            factionInfos = {
                 colors: faction.colors.slice()
             }
         }

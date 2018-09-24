@@ -5,6 +5,12 @@ const Logger = require('../Logger/Logger')
 
 const Game = require('../GameElements/Game')
 
+const gameParams = {
+    width: 7,
+    height: 7,
+    startUnitCount: 8
+}
+
 const bindSocket = (io, socket, players, games) => {
     
     socket.on('startGame', () => {
@@ -24,7 +30,14 @@ const bindSocket = (io, socket, players, games) => {
 
             const hostPlayer = players[context.game.playerId]
             const joinedPlayer = players[context.game.joinedPlayerId]
-            context.game.gameInstance = new Game(7, 7, hostPlayer.faction, joinedPlayer.faction, 8)
+            const gameConfig = {
+                width: gameParams.width,
+                height: gameParams.height,
+                player1Faction: hostPlayer.faction,
+                player2Faction: joinedPlayer.faction,
+                startUnitCount: gameParams.startUnitCount
+            }
+            context.game.gameInstance = new Game(gameConfig)
             updateGameState(context.game, players)
         } else {
             helpers.sendError(socket, 'You must be host to start the game')
@@ -46,7 +59,14 @@ const bindSocket = (io, socket, players, games) => {
         // re-initialize game
         const hostPlayer = players[context.game.playerId]
         const joinedPlayer = players[context.game.joinedPlayerId]
-        context.game.gameInstance = new Game(7, 7, hostPlayer.faction, joinedPlayer.faction, 8)
+        const gameConfig = {
+            width: gameParams.width,
+            height: gameParams.height,
+            player1Faction: hostPlayer.faction,
+            player2Faction: joinedPlayer.faction,
+            startUnitCount: gameParams.startUnitCount
+        }
+        context.game.gameInstance = new Game(gameConfig)
         updateGameState(context.game, players)
     })
 }
@@ -62,7 +82,7 @@ const getReqContext = (socket, players, games) => {
     // check if player exists
     if (!players[socket.id]) {
         helpers.sendError(socket, 'Player must be registered to use this feature')
-        return null;
+        return null
     }
 
     const game = games.find(g => g.id === players[socket.id].gameId)
@@ -74,13 +94,19 @@ const getReqContext = (socket, players, games) => {
     }
 
     // check if the game is complete
-    if (game.playerId == null || game.joinedPlayerId == null || !players[game.joinedPlayerId]) {
+    if (!game.playerId || !game.joinedPlayerId || !players[game.joinedPlayerId]) {
         helpers.sendError(socket, 'Game is not complete')
         return null
     }
 
     const gameStarted = !!game.gameInstance
-    const isMyTurn = gameStarted && ((game.gameInstance.turn === 1 && game.playerId === socket.id) || (game.gameInstance.turn === 2 && game.joinedPlayerId === socket.id))
+    let isMyTurn = false
+    if (gameStarted) {
+        isMyTurn = (
+            (game.gameInstance.turn === 1 && socket.id === game.playerId) ||
+            (game.gameInstance.turn === 2 && socket.id === game.joinedPlayerId)
+        )
+    }
 
     return { game, gameStarted, isMyTurn }
 }

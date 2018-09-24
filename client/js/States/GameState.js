@@ -12,7 +12,7 @@ export default class GameState extends AppState {
             playerName: $('#playerName'),
             factionSelect: $('#factionSelect'),
 
-            DEBUG__button: $('#test_btn')
+            __DEBUGButton: $('#test_btn')
         }
 
         this.isHost = false
@@ -46,8 +46,8 @@ export default class GameState extends AppState {
         })
 
         // DEBUG
-        this.dom.DEBUG__button.text('reset game')
-        this.dom.DEBUG__button.on('click', e => {
+        this.dom.__DEBUGButton.text('(DEBUG) reset game')
+        this.dom.__DEBUGButton.on('click', e => {
             this.client.call('resetGame')
         })
     }
@@ -57,7 +57,7 @@ export default class GameState extends AppState {
 
         $('#game button[data-action="back"]').off()
 
-        this.dom.DEBUG__button.off()
+        this.dom.__DEBUGButton.off()
     }
 
     show() {

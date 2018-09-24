@@ -6,6 +6,8 @@ const Serializable = require('./Serializable')
 
 const EliteProbability = 0.3
 
+const STACK_NUMBER = 3
+
 module.exports = class Field extends Serializable {
     /**
      * @constructor
@@ -42,7 +44,7 @@ module.exports = class Field extends Serializable {
 
         if (unitInfos && unitInfos.column) {
             const index = unitInfos.column.indexOf(unitInfos.unit)
-            col.splice(index, 1) // remove the unit
+            unitInfos.column.splice(index, 1) // remove the unit
             this.reinforcement++ // increment reinforcement
             if (unitInfos.column[index]) {
                 this.analyseAfterRemove(unitInfos.column, index) // check for changes
@@ -66,9 +68,9 @@ module.exports = class Field extends Serializable {
     reinforce() {
         for(;this.reinforcement > 0; this.reinforcement--) {
             // create unit
-            const elitesOnGrid = this.grid.reduce((acc, column) => {
-                return acc + column.reduce((acc, unit) => {
-                    return acc + (unit.type === 'elite' ? 1 : 0)
+            const elitesOnGrid = this.grid.reduce((acc1, column) => {
+                return acc1 + column.reduce((acc2, unit) => {
+                    return acc2 + (unit.type === 'elite' ? 1 : 0)
                 }, 0)
             }, 0)
             const nbEliteAllowed = this.player.nbEliteAllowed
@@ -96,14 +98,16 @@ module.exports = class Field extends Serializable {
         const unitInfos = this.getUnitInfos(uuid)
         
         // check for attack pack (it can only be at the end of the column)
-        const last3Units = unitInfos.column.slice(unitInfos.column.length - 3)
-        if (last3Units.every((unit, idx) => {
-            const colorPredicate = (unit.color === unitInfos.unit.color)
-            const typePredicate = (idx > 0 ? (unit.type === 'normal') : true)
-            return colorPredicate && typePredicate
-        })) 
-        {
-            this.createAttackPack(unitInfos.column, unitInfos.column.length - 3, 3)
+        if (unitInfos.column.length >= STACK_NUMBER) {
+            const last3Units = unitInfos.column.slice(-STACK_NUMBER)
+            if (last3Units.every((unit, idx) => {
+                const colorPredicate = (unit.color === unitInfos.unit.color)
+                const typePredicate = (idx > 0 ? (unit.type === 'normal') : true)
+                return colorPredicate && typePredicate
+            }))
+            {
+                this.createAttackPack(unitInfos.column, unitInfos.column.length - STACK_NUMBER, STACK_NUMBER)
+            }
         }
 
         // check for wall pack
@@ -114,19 +118,18 @@ module.exports = class Field extends Serializable {
         // check for attack pack
         if (column[index].type === 'normal') {
             const color = column[index].color
-            const lastIndex = (column[index+1] && column[index+1].type === 'normal' && column[index+1].color === color) ? index+1 : index
-            for (let i = lastIndex; i >= 0 && column[i].color === color && column[i].type === 'normal'; --i); // find the first index
-            let startIndex;
-            if (i < 0) {
-                startIndex = 0
-            } else if (column[i].color === color && column[i].type === 'elite') {
-                startIndex = i
-            } else {
-                startIndex = i + 1
-            }
 
-            if (lastIndex - startIndex >= 3) {
-                this.createAttackPack(column, startIndex, lastIndex - startIndex)
+            // find the first & last indices
+            const lastIndex = (column[index+1] && column[index+1].type === 'normal' && column[index+1].color === color) ? index+1 : index
+            let startIndex = lastIndex
+            while (startIndex > 0 && column[startIndex-1].color === color && column[startIndex-1].type === 'normal') {
+                startIndex--
+            }
+            
+            const nbrSimilarUnits = lastIndex - startIndex
+
+            if (nbrSimilarUnits >= STACK_NUMBER) {
+                this.createAttackPack(column, startIndex, nbrSimilarUnits)
             }
         }
 

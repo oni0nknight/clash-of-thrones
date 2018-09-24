@@ -3,6 +3,8 @@
 const Logger = require('../Logger/Logger')
 const ErrorCodes = require('../ErrorCodes')
 
+const HEXA_BASE = 16
+
 const Helpers = {
     
     sendError(socket, errorCode) {
@@ -17,7 +19,7 @@ const Helpers = {
     
     generateUUID() {
         return 'xxxxxxxx-game-xxxxxxxx'.replace(/[x]/g, () => {
-            return (Math.random() * 16 | 0).toString(16)
+            return (Math.random() * HEXA_BASE | 0).toString(HEXA_BASE)
         })
     }
 }

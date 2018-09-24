@@ -1,6 +1,8 @@
 
 module.exports = 
 {
+	"parser": "babel-eslint",
+	
 	"env":
 	{
 		"es6": true,
@@ -23,6 +25,12 @@ module.exports =
 		// Disallow use of undeclared variables unless mentioned in a /* global */ block
 		// https://eslint.org/docs/rules/no-undef
 		"no-undef": "error",
+
+		// Disallow Unused Variables
+		// https://eslint.org/docs/rules/no-unused-vars
+		"no-unused-vars": ["error", {
+			"args" : "none"
+		}],
 
 		// Enforce variable initializations at declaration
 		// https://eslint.org/docs/rules/init-declarations
@@ -59,7 +67,7 @@ module.exports =
 		// https://eslint.org/docs/rules/no-use-before-define
 		"no-use-before-define": [ "error",
 		{
-			"variables": true,
+			"variables": false,
 			"functions": false,
 			"classes": false
 		}],
@@ -107,7 +115,7 @@ module.exports =
 		// https://eslint.org/docs/rules/no-magic-numbers
 		"no-magic-numbers": [ "error",
 		{
-			"ignore": [ 0, 1, -1 ],
+			"ignore": [ 0, 1, -1, 2 ],
 			"ignoreArrayIndexes": true,
 			"enforceConst": true,
 			"detectObjects": false
@@ -447,7 +455,9 @@ module.exports =
 
 		// Disallow trailing whitespace at the end of lines
 		// https://eslint.org/docs/rules/no-trailing-spaces
-		"no-trailing-spaces": "error",
+		"no-trailing-spaces": ["error", {
+			"skipBlankLines": true
+		}],
 
 		// Disallow trailing commas
 		// https://eslint.org/docs/rules/comma-dangle

@@ -4,6 +4,12 @@ const Entity = require('./Entity')
 const DataHelper = require('../DataHelpers')
 const Logger = require('../Logger/Logger')
 
+const UNIT_SIZE = {
+    NORMAL: 1,
+    ELITE: 2,
+    PACKED: 3
+}
+
 module.exports = class Unit extends Entity {
     /**
      * @constructor
@@ -12,7 +18,7 @@ module.exports = class Unit extends Entity {
      * @param {string} color the color of the unit
      */
     constructor(faction, type = 'normal', color) {
-        const unitInfos  = DataHelper.getUnitInfos(faction, type)
+        const unitInfos = DataHelper.getUnitInfos(faction, type)
         
         super(unitInfos.idleStrength)
 
@@ -28,11 +34,11 @@ module.exports = class Unit extends Entity {
 
     get size() {
         if (this.packed) {
-            return 3
+            return UNIT_SIZE.PACKED
         } else if (this.type === 'normal') {
-            return 1
+            return UNIT_SIZE.NORMAL
         } else if (this.type === 'elite') {
-            return 2
+            return UNIT_SIZE.ELITE
         } else {
             Logger.error('Unit.size :: unknown type unit')
             return -1
@@ -57,7 +63,7 @@ module.exports = class Unit extends Entity {
             color: this.color,
             size: this.size,
             packed: this.packed,
-            attackDelay: this.attackDelay,
+            attackDelay: this.attackDelay
         }
     }
 }

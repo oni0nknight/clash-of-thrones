@@ -13,7 +13,7 @@ client.subscribe('err', errorHandler)
 let stateStack = []
 let currentState = null
 
-let states = {
+const states = {
     'init': null,
     'hostLobby': null,
     'joinLobby': null,
@@ -23,11 +23,11 @@ let states = {
 
 window.onload = () => {
     // load states
-    states.init = new InitState(client);
-    states.hostLobby = new HostLobbyState(client);
-    states.joinLobby = new JoinLobbyState(client);
-    states.wait = new WaitState(client);
-    states.game = new GameState(client);
+    states.init = new InitState(client)
+    states.hostLobby = new HostLobbyState(client)
+    states.joinLobby = new JoinLobbyState(client)
+    states.wait = new WaitState(client)
+    states.game = new GameState(client)
 
     // hide everything
     $('#header').hide()

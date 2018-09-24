@@ -8,7 +8,7 @@ const bindSocket = (io, socket, players, games) => {
 
     socket.on('pendingGames', () => {
         Logger.log(socket.id, 'requesting pending games')
-        const pendingGames = games.filter(g => g.joinedPlayerId == null).map(g => {
+        const pendingGames = games.filter(g => !g.joinedPlayerId).map(g => {
             return {
                 id: g.id,
                 gameName: g.gameName,
@@ -39,7 +39,7 @@ const bindSocket = (io, socket, players, games) => {
 
         if (context.gameStarted) {
             Logger.log(socket.id, 'fetching game state')
-            
+
             const gameState = context.game.gameInstance.serialize()
             socket.emit('gameState_response', gameState)
         }
@@ -58,7 +58,7 @@ const getReqContext = (socket, players, games) => {
     // check if player exists
     if (!players[socket.id]) {
         helpers.sendError(socket, 'Player must be registered to use this feature')
-        return null;
+        return null
     }
 
     const game = games.find(g => g.id === players[socket.id].gameId)

@@ -2,7 +2,6 @@
 
 const helpers = require('./Helpers')
 const Logger = require('../Logger/Logger')
-const gameData = require('../../assets/data.json')
 
 const GameHandler = require('./GameHandler')
 
@@ -18,7 +17,7 @@ const bindSocket = (io, socket, players, games) => {
 
         if (playerName) {
             players[socket.id] = {
-                socket: socket,
+                socket,
                 name: playerName,
                 faction: data.faction,
                 gameId: null

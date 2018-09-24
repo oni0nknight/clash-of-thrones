@@ -1,20 +1,32 @@
 'use strict'
 
 const Field = require('./Field')
-const Player = require('./Player')
 const Serializable = require('./Serializable')
+
+const DEFAULT_CONF = {
+    WIDTH: 7,
+    HEIGHT: 7,
+    START_UNIT_COUNT : 8
+}
 
 module.exports = class Game extends Serializable {
     /**
      * @constructor
-     * @param {number} width 
-     * @param {number} height 
-     * @param {string} player1Faction 
-     * @param {string} player2Faction 
-     * @param {number} startUnitCount 
+     * @param {number} width
+     * @param {number} height
+     * @param {string} player1Faction
+     * @param {string} player2Faction
+     * @param {number} startUnitCount
      */
-    constructor(width, height, player1Faction, player2Faction, startUnitCount) {
+    constructor(config) {
         super()
+
+        const width = config.width ? config.width : DEFAULT_CONF.WIDTH
+        const height = config.height ? config.height : DEFAULT_CONF.HEIGHT
+        const player1Faction = config.player1Faction ? config.player1Faction : ''
+        const player2Faction = config.player2Faction ? config.player2Faction : ''
+        const startUnitCount = config.startUnitCount ? config.startUnitCount : DEFAULT_CONF.START_UNIT_COUNT
+
         this.field1 = new Field(width, height, player1Faction, startUnitCount)
         this.field2 = new Field(width, height, player2Faction, startUnitCount)
 

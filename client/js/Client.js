@@ -1,5 +1,7 @@
 import io from 'socket.io-client'
 
+const QUERY_TIMEOUT = 5000
+
 export default class Client {
     constructor() {
         this.socket = io.connect()
@@ -33,7 +35,7 @@ export default class Client {
             this.socket.emit(eventName, args)
 
             // handle timeout
-            timeout = setTimeout(handleError, 5000)
+            timeout = setTimeout(handleError, QUERY_TIMEOUT)
         })
     }
 
