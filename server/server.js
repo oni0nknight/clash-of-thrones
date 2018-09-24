@@ -20,8 +20,8 @@ app.get('/', (req, res) => {
 
 // express routing for the test route (useful during dev)
 app.get('/server-test', (req, res) => {
-    const Game = require("./js/GameElements/Game")
-    const gameData = require("./assets/data.json")
+    const Game = require('./js/GameElements/Game')
+    const gameData = require('./assets/data.json')
 
     const factions = gameData.factions
     const game = new Game(7, 6, factions[0], factions[0], 8)
@@ -52,7 +52,7 @@ let games = []
  */
 let players = {}
 
-io.on('connection', socket => 
+io.on('connection', socket =>
 {
     console.log(socket.id + ' :: ' + 'new connection !')
 
