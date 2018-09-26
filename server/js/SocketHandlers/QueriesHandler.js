@@ -57,7 +57,7 @@ const bindSocket = (io, socket, players, games) => {
 const getReqContext = (socket, players, games) => {
     // check if player exists
     if (!players[socket.id]) {
-        helpers.sendError(socket, 'Player must be registered to use this feature')
+        helpers.sendError(socket, '0001')
         return null
     }
 
@@ -65,7 +65,7 @@ const getReqContext = (socket, players, games) => {
 
     // check if player is in a game
     if (!game) {
-        helpers.sendError(socket, 'Must host or join a game first')
+        helpers.sendError(socket, '1003')
         return null
     }
 

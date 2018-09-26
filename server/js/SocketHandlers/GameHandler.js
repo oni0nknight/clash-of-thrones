@@ -35,7 +35,7 @@ const bindSocket = (io, socket, players, games) => {
             io.emit('gameListUpdated')
         }
         else {
-            helpers.sendError(socket, 'Cannot create a game. You already are registered in a game.')
+            helpers.sendError(socket, '1001')
         }
     })
 
@@ -60,7 +60,7 @@ const bindSocket = (io, socket, players, games) => {
             players[game.playerId].socket.emit('gameReady')
         }
         else {
-            helpers.sendError(socket, 'Error while joining game')
+            helpers.sendError(socket, '1002')
         }
     })
 
@@ -115,7 +115,7 @@ const destroyGame = (io, socket, players, games) => {
 const getReqContext = (socket, players, games) => {
     // check if player exists
     if (!players[socket.id]) {
-        helpers.sendError(socket, 'Player must be registered to use this feature')
+        helpers.sendError(socket, '0001')
         return null
     }
 

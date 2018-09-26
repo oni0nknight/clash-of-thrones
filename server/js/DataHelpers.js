@@ -4,6 +4,10 @@ const data = require('../assets/data.json')
 
 module.exports = {
 
+    factionExists(factionId) {
+        return data.factions.some(f => f.id === factionId)
+    },
+
     getFactionInfos(factionId) {
         const faction = data.factions.find(f => f.id === factionId)
         let factionInfos = null

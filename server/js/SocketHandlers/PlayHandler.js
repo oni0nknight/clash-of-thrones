@@ -20,7 +20,7 @@ const bindSocket = (io, socket, players, games) => {
             return
         }
         if (context.gameStarted) {
-            helpers.sendError(socket, 'Game already created')
+            helpers.sendError(socket, '1101')
             return
         }
 
@@ -40,7 +40,7 @@ const bindSocket = (io, socket, players, games) => {
             context.game.gameInstance = new Game(gameConfig)
             updateGameState(context.game, players)
         } else {
-            helpers.sendError(socket, 'You must be host to start the game')
+            helpers.sendError(socket, '1102')
         }
     })
 
@@ -81,7 +81,7 @@ const bindSocket = (io, socket, players, games) => {
 const getReqContext = (socket, players, games) => {
     // check if player exists
     if (!players[socket.id]) {
-        helpers.sendError(socket, 'Player must be registered to use this feature')
+        helpers.sendError(socket, '0001')
         return null
     }
 
@@ -89,13 +89,13 @@ const getReqContext = (socket, players, games) => {
 
     // check if player is in a game
     if (!game) {
-        helpers.sendError(socket, 'Must host or join a game first')
+        helpers.sendError(socket, '1003')
         return null
     }
 
     // check if the game is complete
     if (!game.playerId || !game.joinedPlayerId || !players[game.joinedPlayerId]) {
-        helpers.sendError(socket, 'Game is not complete')
+        helpers.sendError(socket, '1004')
         return null
     }
 
