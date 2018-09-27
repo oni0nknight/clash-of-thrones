@@ -21,7 +21,7 @@ export default class HostLobbyState extends AppState {
             this.dom.form.addClass('was-validated')
             if (this.dom.form[0].checkValidity()) {
                 // go to waiting state
-                this.switchToState('wait', true)
+                this.switchToState('loader', {next: 'waitForPlayer', args: [true], event: 'gameCreated'})
 
                 // create game on server
                 this.client.call('createGame', this.dom.gameName.val())

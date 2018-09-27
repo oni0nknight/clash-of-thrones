@@ -24,6 +24,9 @@ const bindSocket = (io, socket, players, games) => {
                 faction: data.faction,
                 gameId: null
             }
+
+            // validate the register
+            socket.emit('registered')
         }
         else {
             helpers.sendError(socket, '0002')

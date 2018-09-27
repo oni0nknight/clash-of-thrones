@@ -1,7 +1,7 @@
 import AppState from './AppState'
 import $ from 'jquery'
 
-export default class WaitState extends AppState {
+export default class WaitForPlayerState extends AppState {
     constructor(client) {
         super(client)
 

@@ -33,6 +33,9 @@ const bindSocket = (io, socket, players, games) => {
 
             // notify all the players
             io.emit('gameListUpdated')
+
+            // validate the creation
+            socket.emit('gameCreated')
         }
         else {
             helpers.sendError(socket, '1001')

@@ -27,7 +27,7 @@ export default class JoinLobbyState extends AppState {
             this.dom.form.addClass('was-validated')
             if (this.dom.form[0].checkValidity()) {
                 // go to waiting state
-                this.switchToState('wait', false)
+                this.switchToState('waitForPlayer', false)
 
                 // join game on server
                 this.client.call('joinGame', $('#gameSelect option:selected').val())

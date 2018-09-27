@@ -2,9 +2,10 @@ import $ from 'jquery'
 import Client from './js/Client'
 
 import InitState from './js/States/InitState'
+import LoaderState from './js/States/LoaderState'
 import HostLobbyState from './js/States/HostLobbyState'
 import JoinLobbyState from './js/States/JoinLobbyState'
-import WaitState from './js/States/WaitState'
+import WaitForPlayerState from './js/States/WaitForPlayerState'
 import GameState from './js/States/GameState'
 
 const client = new Client()
@@ -15,23 +16,25 @@ let currentState = null
 
 const states = {
     'init': null,
+    'loader': null,
     'hostLobby': null,
     'joinLobby': null,
-    'wait': null,
+    'waitForPlayer': null,
     'game': null
 }
 
 window.onload = () => {
     // load states
     states.init = new InitState(client)
+    states.loader = new LoaderState(client)
     states.hostLobby = new HostLobbyState(client)
     states.joinLobby = new JoinLobbyState(client)
-    states.wait = new WaitState(client)
+    states.waitForPlayer = new WaitForPlayerState(client)
     states.game = new GameState(client)
 
     // hide everything
     $('#header').hide()
-    $('.view').hide()
+    $('.state').hide()
 
     // bind events
     bindEvents()
@@ -51,8 +54,16 @@ function bindEvents() {
     })
 
     document.addEventListener('rollbackState', e => {
-        stateStack.pop() // remove current state from stack
-        const newState = stateStack.pop() // remove last state from stack (will be put back by switchToState)
+        // remove current state from stack
+        stateStack.pop()
+
+        // find the new state to enter to (cannot be loader state)
+        let newState = ''
+        do {
+            newState = stateStack.pop() // remove from stack
+        } while (newState === 'loader')
+
+        // switch to new state
         switchToState(newState)
     })
 }

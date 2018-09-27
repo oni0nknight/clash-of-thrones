@@ -31,18 +31,18 @@ export default class InitState extends AppState {
         $('#init-form button[data-type="submit"]').on('click', function(e) {
             self.dom.form.addClass('was-validated')
             if (self.dom.form[0].checkValidity()) {
+                // go to next step
+                if ($(this).data('action') === 'host') {
+                    self.switchToState('loader', {next: 'hostLobby', event: 'registered'})
+                } else {
+                    self.switchToState('loader', {next: 'joinLobby', event: 'registered'})
+                }
+
                 // register the player to server
                 self.client.call('register', {
                     name: self.dom.playerName.val(),
                     faction: self.dom.factionSelect.val()
                 })
-    
-                // go to next step
-                if ($(this).data('action') === 'host') {
-                    self.switchToState('hostLobby')
-                } else {
-                    self.switchToState('joinLobby')
-                }
             }
         })
     }

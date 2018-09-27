@@ -15,7 +15,7 @@
 
         <div class="container-fluid">
             <!-- INIT VIEW -->
-            <form id="init-form" class='view' novalidate>
+            <form id="init-form" class='state' novalidate>
                 <div class="form-group">
                     <label for="playerName">Player name</label>
                     <input type="text" id="playerName" class="form-control" placeholder="Player name" required>
@@ -35,7 +35,7 @@
             </form>
 
             <!-- HOST LOBBY VIEW -->
-            <form id="host-lobby-form" class='view' novalidate>
+            <form id="host-lobby-form" class='state' novalidate>
                 <div class="form-group">
                     <button type="button" data-type="static" data-action="back" class="btn btn-default">Go back</button>
                 </div>
@@ -50,7 +50,7 @@
             </form>
 
             <!-- JOIN LOBBY VIEW -->
-            <form id="join-lobby-form" class='view'  novalidate>
+            <form id="join-lobby-form" class='state'  novalidate>
                 <div class="form-group">
                     <button type="button" data-type="static" data-action="back" class="btn btn-default">Go back</button>
                 </div>
@@ -65,20 +65,25 @@
             </form>
 
             <!-- HOST WAITING VIEW -->
-            <div id="host-wait" class="view">
+            <div id="host-wait" class="state">
                 <div class="form-group">
                     <button type="button" data-type="static" data-action="back" class="btn btn-default">Go back</button>
                 </div>
                 <h3>Waiting for another player...</h3>
+                <div class="loader"></div>
             </div>
 
             <!-- JOIN WAITING VIEW -->
-            <div id="join-wait" class="view">
+            <div id="join-wait" class="state">
                 <h3>Waiting for game start...</h3>
+                <div class="loader"></div>
             </div>
 
+            <!-- LOADER VIEW -->
+            <div id="loader" class="state loader"></div>
+
             <!-- GAME -->
-            <div id="game" class="view">
+            <div id="game" class="state">
                 <div class="form-group">
                     <button type="button" data-type="static" data-action="back" class="btn btn-default">Go back</button>
                 </div>
