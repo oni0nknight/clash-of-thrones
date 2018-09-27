@@ -30,6 +30,8 @@ export default class Game {
 
         this.fieldId = isHost ? 'field1' : 'field2'
 
+        this.lastGameState = null
+
         this.gameObjects = {
             frame: null,
             field1: null,
@@ -38,7 +40,7 @@ export default class Game {
             cursors: null
         }
 
-        this.updateGameState = this.updateGameState.bind(this)
+        this.refresh = this.refresh.bind(this)
     }
 
     initialize(playerName, faction) {
@@ -76,10 +78,10 @@ export default class Game {
         this.gameObjects.field2 = this.game.add.group()
 
         // subscibe to events
-        this.client.subscribe('gameState_push', this.updateGameState)
+        this.client.subscribe('gameState_push', this.refresh)
 
         // init game state
-        this.queryGameState()
+        this.updateGameState()
     }
 
     update() {
@@ -87,7 +89,7 @@ export default class Game {
 
     destroy() {
         // unsubscribe to events
-        this.client.unsubscribe('gameState_push', this.updateGameState)
+        this.client.unsubscribe('gameState_push', this.refresh)
 
         // warn the server
         this.client.call('leaveGame')
@@ -100,11 +102,18 @@ export default class Game {
     // Helpers
     //============================================
 
-    queryGameState() {
-        this.client.query('gameState').then(gs => this.updateGameState(gs))
+    updateGameState() {
+        return this.client.query('gameState').then(gs => {
+            this.lastGameState = gs
+            this.refresh(gs)
+        })
     }
 
     displayUnit(fieldId, col, row, unit) {
+        // find spritesheet
+        const spritesheet = this.faction + '-' + unit.type
+
+        // compute position
         const xpos = X_OFFSET + col * SPRITE_SIZE
         let ypos = 0
         if (fieldId === this.fieldId) {
@@ -116,14 +125,27 @@ export default class Game {
             ypos = Y_ENNEMY_OFFSET - row * SPRITE_SIZE
         }
 
-        const spritesheet = this.faction + '-' + unit.type
-        this.gameObjects[fieldId].create(xpos, ypos, spritesheet, spriteFrames[unit.color])
+        // instanciate sprite
+        const sprite = new Phaser.Sprite(this.game, xpos, ypos, spritesheet, spriteFrames[unit.color])
+        sprite.name = unit.uuid
+
+        if (fieldId === this.fieldId) {
+            sprite.inputEnabled = true
+            sprite.events.onInputUp.add(this.onInputUp, { context: this })
+        }
+        
+        // add it to the right group
+        this.gameObjects[fieldId].add(sprite)
+    }
+
+    removeUnit(sprite) {
+        this.client.call('removeUnit', { uuid: sprite.name })
     }
 
     // Events
     //============================================
 
-    updateGameState(gameState = {}) {
+    refresh(gameState = {}) {
         console.log('received a new state : ', gameState)
         const fieldIds = ['field1', 'field2']
 
@@ -149,5 +171,13 @@ export default class Game {
                 })
             })
         })
+    }
+
+    // Input handlers
+
+    onInputUp(sprite, pointer) {
+        if (pointer.middleButton.justReleased()) {
+            this.context.removeUnit(sprite)
+        }
     }
 }

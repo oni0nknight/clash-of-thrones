@@ -16,10 +16,12 @@ const errors =
     '1002' : 'Cannot join a game. The game you try to join is unavailable or corrupted.',
     '1003' : 'Unauthorized. You must be in a game for this action.',
     '1004' : 'Your game is not complete. Wait for another player to join.',
+    '1005' : 'Unauthorized. It is not your turn to play.',
+    '1006' : 'Unauthorized. Please start your game first.',
 
     // Start game
     '1101' : 'Cannot start the game. The game is already started.',
-    '1102' : 'Cannot start the game. You must be host to start the game',
+    '1102' : 'Cannot start the game. You must be host to start the game'
 }
 
 function get(errorCode) {

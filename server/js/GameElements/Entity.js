@@ -11,6 +11,7 @@ module.exports = class Entity extends Serializable {
 
     serialize() {
         return {
+            uuid: this.uuid,
             strength: this.strength,
             movable: this.movable
         }

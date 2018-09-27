@@ -44,6 +44,31 @@ const bindSocket = (io, socket, players, games) => {
         }
     })
 
+    socket.on('removeUnit', ({uuid}) => {
+        Logger.log(socket.id, 'requesting to remove unit')
+        const context = getReqContext(socket, players, games)
+        if (!context) {
+            return
+        }
+        if (!context.isMyTurn) {
+            helpers.sendError(socket, '1005')
+            return
+        }
+        if (!context.gameStarted) {
+            helpers.sendError(socket, '1006')
+            return
+        }
+        Logger.log(socket.id, 'removing unit', uuid)
+
+        if (isHost(socket, context.game, players)) {
+            context.game.gameInstance.field1.removeUnit(uuid)
+        }
+        else {
+            context.game.gameInstance.field2.removeUnit(uuid)
+        }
+        updateGameState(context.game, players)
+    })
+
 
     // DEBUG COMMANDS
     //=======================================
@@ -125,6 +150,10 @@ const updateGameState = (game, players) => {
         players[game.playerId].socket.emit('gameState_push', gameState)
         players[game.joinedPlayerId].socket.emit('gameState_push', gameState)
     }
+}
+
+const isHost = (socket, game, players) => {
+    return players[socket.id].gameId === game.id && game.playerId === socket.id
 }
 
 module.exports = {
