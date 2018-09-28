@@ -69,6 +69,31 @@ const bindSocket = (io, socket, players, games) => {
         updateGameState(context.game, players)
     })
 
+    socket.on('moveUnit', ({uuid, newColId}) => {
+        Logger.log(socket.id, 'requesting to move unit')
+        const context = getReqContext(socket, players, games)
+        if (!context) {
+            return
+        }
+        if (!context.isMyTurn) {
+            helpers.sendError(socket, '1005')
+            return
+        }
+        if (!context.gameStarted) {
+            helpers.sendError(socket, '1006')
+            return
+        }
+        Logger.log(socket.id, 'moving unit', uuid)
+
+        if (isHost(socket, context.game, players)) {
+            context.game.gameInstance.field1.moveUnit(uuid, newColId)
+        }
+        else {
+            context.game.gameInstance.field2.moveUnit(uuid, newColId)
+        }
+        updateGameState(context.game, players)
+    })
+
 
     // DEBUG COMMANDS
     //=======================================

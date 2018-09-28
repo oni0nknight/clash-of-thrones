@@ -10,6 +10,8 @@ const X_OFFSET = 30
 const Y_OFFSET = 379
 const Y_ENNEMY_OFFSET = 299
 const SPRITE_SIZE = 40
+const FIELD_WIDTH = 7
+const FIELD_HEIGHT = 7
 
 const spriteFrames = {
     green: 0,
@@ -104,12 +106,11 @@ export default class Game {
 
     updateGameState() {
         return this.client.query('gameState').then(gs => {
-            this.lastGameState = gs
             this.refresh(gs)
         })
     }
 
-    displayUnit(fieldId, col, row, unit) {
+    displayUnit(fieldId, col, row, unit, draggable) {
         // find spritesheet
         const spritesheet = this.faction + '-' + unit.type
 
@@ -132,6 +133,19 @@ export default class Game {
         if (fieldId === this.fieldId) {
             sprite.inputEnabled = true
             sprite.events.onInputUp.add(this.onInputUp, { context: this })
+            if (draggable) {
+                // enable drag
+                sprite.input.enableDrag(true)
+                sprite.input.setDragLock(true, false)
+
+                // define drag snaping & bounds
+                sprite.input.enableSnap(SPRITE_SIZE, SPRITE_SIZE, true, true, X_OFFSET, Y_OFFSET)
+                sprite.input.boundsRect = new Phaser.Rectangle(X_OFFSET, Y_OFFSET, FIELD_WIDTH * SPRITE_SIZE, FIELD_HEIGHT * SPRITE_SIZE)
+
+                // drag control update
+                sprite.events.onDragUpdate.add(this.onDragUpdate, { context: this })
+                sprite.events.onDragStop.add(this.onDragStop, { context: this })
+            }
         }
         
         // add it to the right group
@@ -142,11 +156,17 @@ export default class Game {
         this.client.call('removeUnit', { uuid: sprite.name })
     }
 
+    moveUnit(sprite, newColId) {
+        this.client.call('moveUnit', { uuid: sprite.name, newColId })
+    }
+
+
     // Events
     //============================================
 
     refresh(gameState = {}) {
         console.log('received a new state : ', gameState)
+        this.lastGameState = gameState
         const fieldIds = ['field1', 'field2']
 
         fieldIds.forEach(fieldId => {
@@ -159,8 +179,9 @@ export default class Game {
                 if (fieldId !== this.fieldId && col[0]) {
                     currentRow = col[0].size - 1
                 }
-                col.forEach((unit, idx) => {
-                    this.displayUnit(fieldId, colId, currentRow, unit)
+                col.forEach((unit, idx, units) => {
+                    const draggable = (idx === units.length - 1)
+                    this.displayUnit(fieldId, colId, currentRow, unit, draggable)
 
                     if (fieldId === this.fieldId) {
                         currentRow += unit.size
@@ -178,6 +199,29 @@ export default class Game {
     onInputUp(sprite, pointer) {
         if (pointer.middleButton.justReleased()) {
             this.context.removeUnit(sprite)
+        }
+    }
+    
+    onDragUpdate(sprite, pointer, x, y, snapPoint) {
+        if (this.context.lastGameState) {
+            const colId = Number.parseInt((snapPoint.x - X_OFFSET) / SPRITE_SIZE)
+            const column = this.context.lastGameState[this.context.fieldId].grid[colId]
+            const columnSize = column.reduce((acc, unit) => {
+                return acc + (unit.uuid !== sprite.name ? unit.size : 0)
+            }, 0)
+            sprite.y = Y_OFFSET + columnSize * SPRITE_SIZE
+        }
+    }
+    
+    onDragStop(sprite, pointer) {
+        if (this.context.lastGameState) {
+            const lastColId = this.context.lastGameState[this.context.fieldId].grid.findIndex(col => {
+                return !!col.find(unit => unit.uuid === sprite.name)
+            })
+            const newColId = Number.parseInt((sprite.x - X_OFFSET) / SPRITE_SIZE)
+            if (lastColId !== -1 && lastColId !== newColId) {
+                this.context.moveUnit(sprite, newColId)
+            }
         }
     }
 }
