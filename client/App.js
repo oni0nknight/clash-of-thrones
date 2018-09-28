@@ -39,8 +39,26 @@ window.onload = () => {
     // bind events
     bindEvents()
 
-    // start with 1st state
-    switchToState('init')
+    if (window.location.search.includes('dbg_hst')) {
+        $('#playerName').text('player1')
+        $('#factionSelect').html('<option selected value="targaryens">targaryens</option>')
+        client.call('register', { name: 'player1', faction: 'targaryens' })
+        setTimeout(() => client.call('createGame', 'game'), 100)
+        setTimeout(() => switchToState('waitForPlayer', true), 200)
+    }
+    else if (window.location.search.includes('dbg_join')) {
+        $('#playerName').text('player1')
+        $('#factionSelect').html('<option selected value="targaryens">targaryens</option>')
+        client.call('register', { name: 'player2', faction: 'targaryens' })
+        switchToState('waitForPlayer', false)
+        client.query('pendingGames').then(pg => {
+            client.call('joinGame', pg[0].id)
+        })
+    }
+    else {
+        // start with 1st state
+        switchToState('init')
+    }
 }
 
 function bindEvents() {
