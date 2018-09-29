@@ -42,7 +42,7 @@ module.exports = class Field extends Serializable {
     removeUnit(uuid) {
         const unitInfos = this.getUnitInfos(uuid)
 
-        if (unitInfos && unitInfos.column) {
+        if (unitInfos.column) {
             const index = unitInfos.column.indexOf(unitInfos.unit)
             unitInfos.column.splice(index, 1) // remove the unit
             this.reinforcement++ // increment reinforcement
@@ -55,7 +55,7 @@ module.exports = class Field extends Serializable {
     moveUnit(uuid, newColumnNumber) {
         const unitInfos = this.getUnitInfos(uuid)
 
-        if (unitInfos && unitInfos.unit.size < this.getFreeSpace(newColumnNumber)) {
+        if (unitInfos.unit && unitInfos.unit.size < this.getFreeSpace(newColumnNumber)) {
             // move unit
             this.removeUnit(uuid)
             this.grid[newColumnNumber].push(unitInfos.unit)
@@ -98,7 +98,7 @@ module.exports = class Field extends Serializable {
         const unitInfos = this.getUnitInfos(uuid)
         
         // check for attack pack (it can only be at the end of the column)
-        if (unitInfos.column.length >= STACK_NUMBER) {
+        if (unitInfos.column && unitInfos.column.length >= STACK_NUMBER) {
             const last3Units = unitInfos.column.slice(-STACK_NUMBER)
             if (last3Units.every((unit, idx) => {
                 const colorPredicate = (unit.color === unitInfos.unit.color)
