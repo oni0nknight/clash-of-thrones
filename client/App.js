@@ -14,6 +14,8 @@ client.subscribe('err', errorHandler)
 let stateStack = []
 let currentState = null
 
+let errorContainer = null
+
 const states = {
     'init': null,
     'loader': null,
@@ -31,6 +33,8 @@ window.onload = () => {
     states.joinLobby = new JoinLobbyState(client)
     states.waitForPlayer = new WaitForPlayerState(client)
     states.game = new GameState(client)
+
+    errorContainer = $('.error-container')
 
     // hide everything
     $('#header').hide()
@@ -106,5 +110,14 @@ function switchToState(stateId, ...args) {
 //=====================================
 
 function errorHandler(error) {
-    console.error(error.code, '::', error.msg)
+    if (errorContainer) {
+        let html = '<div class="alert alert-danger" role="alert" style="display:none;">'
+        html += (error.code + ' :: ' + error.msg)
+        html += '</div>'
+        errorContainer.append(html)
+
+        errorContainer.find(':last-child').fadeIn(150).delay(2000).fadeOut()
+
+        errorContainer.scrollTop(errorContainer.prop('scrollHeight'))
+    }
 }

@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8">
         <link rel="stylesheet" type="text/css" href="vendors/bootstrap/css/bootstrap.min.css">
-        <link rel="stylesheet" type="text/css" href="./style.css">
+        <link rel="stylesheet" type="text/css" href="./style.scss">
         <script src="./App.js"></script>
     </head>
  
@@ -86,11 +86,13 @@
             <div id="game" class="state">
                 <div class="form-group">
                     <button type="button" data-type="static" data-action="back" class="btn btn-default">Go back</button>
-                </div>
-                <div class="form-group">
                     <button id='test_btn' type="button" class="btn btn-default">Test change turn</button>
                 </div>
+                <div id="game-container"></div> 
             </div>
+
+            <!-- ERRORS -->
+            <div class="error-container"></div>
         </div>
     </body>
 </html>

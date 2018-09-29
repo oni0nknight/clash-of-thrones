@@ -1,7 +1,18 @@
 #game {
-    width: 340px;
-    height: 720px;
-    margin: 0 auto;
+    width: 500px;
+    margin: auto;
+
+    #game-container {
+        width: 340px;
+        height: 720px;
+        margin: auto;
+    }
+}
+
+.error-container {
+    height: 200px;
+    overflow: hidden;
+    margin-top: 15px;
 }
 
 .loader {

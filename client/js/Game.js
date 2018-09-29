@@ -51,7 +51,7 @@ export default class Game {
 
         const config = {
             renderer: Phaser.AUTO,
-            parent: 'game',
+            parent: 'game-container',
             width: '100',
             height: '100',
             state: {
