@@ -52,6 +52,7 @@ export default class Game {
             width: '100',
             height: '100',
             state: {
+                init: this.init.bind(this),
                 preload: this.preload.bind(this),
                 create: this.create.bind(this),
                 update: this.update.bind(this)
@@ -63,6 +64,13 @@ export default class Game {
 
     // Phaser lifecycle
     //============================================
+
+    init() {
+        // scale to fit page
+        this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL
+        this.game.scale.pageAlignVertically = true
+        this.game.scale.pageAlignHorizontally = true
+    }
 
     preload() {
         this.game.load.image('frame', frame)
