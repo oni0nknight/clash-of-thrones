@@ -8,7 +8,7 @@ export default class GameState extends AppState {
 
         this.dom = {
             header: $('#header'),
-            gamePage: $('#game'),
+            gamePage: $('#game-container'),
             playerName: $('#playerName'),
             factionSelect: $('#factionSelect'),
 

@@ -49,8 +49,8 @@ export default class Game {
         const config = {
             renderer: Phaser.AUTO,
             parent: 'game-container',
-            width: '100',
-            height: '100',
+            width: 340,
+            height: 720,
             state: {
                 init: this.init.bind(this),
                 preload: this.preload.bind(this),
