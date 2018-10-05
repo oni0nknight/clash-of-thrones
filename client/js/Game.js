@@ -36,10 +36,7 @@ export default class Game {
 
         this.gameObjects = {
             frame: null,
-            field1: null,
-            field2: null,
-            debug: null,
-            cursors: null
+            fields: []
         }
 
         this.refresh = this.refresh.bind(this)
@@ -76,8 +73,8 @@ export default class Game {
     create() {
         this.gameObjects.frame = this.game.add.image(0, 0, 'frame')
 
-        this.gameObjects.field1 = this.game.add.group()
-        this.gameObjects.field2 = this.game.add.group()
+        this.gameObjects.fields.field1 = this.game.add.group()
+        this.gameObjects.fields.field2 = this.game.add.group()
 
         // subscibe to events
         this.client.subscribe('gameState_push', this.refresh)
@@ -149,7 +146,7 @@ export default class Game {
         }
         
         // add it to the right group
-        this.gameObjects[fieldId].add(sprite)
+        this.gameObjects.fields[fieldId].add(sprite)
     }
 
     removeUnit(sprite) {
@@ -165,13 +162,12 @@ export default class Game {
     //============================================
 
     refresh(gameState = {}) {
-        console.log('received a new state : ', gameState)
         this.lastGameState = gameState
         const fieldIds = ['field1', 'field2']
 
         fieldIds.forEach(fieldId => {
             // destroy every sprite
-            this.gameObjects[fieldId].removeAll(true)
+            this.gameObjects.fields[fieldId].removeAll(true)
 
             // rebuild all sprites
             gameState[fieldId].grid.forEach((col, colId) => {
