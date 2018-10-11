@@ -137,11 +137,11 @@ export default class Game {
 
         if (fieldId === this.fieldId) {
             sprite.inputEnabled = true
-            sprite.events.onInputUp.add(this.onInputUp, { context: this })
+            sprite.events.onInputUp.add(this.deleteUnit, { context: this })
             if (draggable) {
-                // enable drag
-                sprite.input.enableDrag(true)
-                sprite.input.setDragLock(true, false)
+                // bind buttons
+                sprite.events.onInputDown.add(this.enableDrag, { context: this })
+                sprite.events.onInputUp.add(this.disableDrag, { context: this })
 
                 // define drag snaping & bounds
                 sprite.input.enableSnap(SPRITE_SIZE, SPRITE_SIZE, true, true, X_OFFSET, Y_OFFSET)
@@ -200,14 +200,27 @@ export default class Game {
 
     // Input handlers
 
-    onInputUp(sprite, pointer) {
-        if (pointer.middleButton.justReleased()) {
+    deleteUnit(sprite, pointer) {
+        const pointerOnSprite = sprite.getBounds().contains(pointer.x, pointer.y)
+        if (pointer.rightButton.justReleased() && pointerOnSprite) {
             this.context.removeUnit(sprite)
         }
     }
+
+    enableDrag(sprite, pointer) {
+        if (pointer.leftButton.isDown) {
+            // enable drag
+            sprite.input.enableDrag(true)
+            sprite.input.setDragLock(true, false)
+        }
+    }
+
+    disableDrag(sprite, pointer) {
+        sprite.input.disableDrag()
+    }
     
     onDragUpdate(sprite, pointer, x, y, snapPoint) {
-        if (this.context.lastGameState) {
+        if (pointer.leftButton.isDown && this.context.lastGameState) {
             const colId = Number.parseInt((snapPoint.x - X_OFFSET) / SPRITE_SIZE)
             const column = this.context.lastGameState[this.context.fieldId].grid[colId]
             const columnSize = column.reduce((acc, unit) => {
