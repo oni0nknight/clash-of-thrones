@@ -115,7 +115,7 @@ export default class Game {
         })
     }
 
-    displayUnit(fieldId, col, row, unit, draggable) {
+    displayUnit(fieldId, col, row, unit, options) {
         // find spritesheet
         const spritesheet = this.faction + '-' + unit.type
 
@@ -135,22 +135,28 @@ export default class Game {
         const sprite = new Phaser.Sprite(this.game, xpos, ypos, spritesheet, spriteFrames[unit.color])
         sprite.name = unit.uuid
 
-        if (fieldId === this.fieldId) {
+        if (options.bindDelete) {
+            // enable inputs
             sprite.inputEnabled = true
+
+            // bind button for delete
             sprite.events.onInputUp.add(this.deleteUnit, { context: this })
-            if (draggable) {
-                // bind buttons
-                sprite.events.onInputDown.add(this.enableDrag, { context: this })
-                sprite.events.onInputUp.add(this.disableDrag, { context: this })
+        }
 
-                // define drag snaping & bounds
-                sprite.input.enableSnap(SPRITE_SIZE, SPRITE_SIZE, true, true, X_OFFSET, Y_OFFSET)
-                sprite.input.boundsRect = new Phaser.Rectangle(X_OFFSET, Y_OFFSET, FIELD_WIDTH * SPRITE_SIZE, FIELD_HEIGHT * SPRITE_SIZE)
+        if (options.bindDrag) {
+            // enable inputs
+            sprite.inputEnabled = true
 
-                // drag control update
-                sprite.events.onDragUpdate.add(this.onDragUpdate, { context: this })
-                sprite.events.onDragStop.add(this.onDragStop, { context: this })
-            }
+            // bind button for drag
+            sprite.events.onInputDown.add(this.enableDrag, { context: this })
+
+            // bind drag update & stop
+            sprite.events.onDragUpdate.add(this.onDragUpdate, { context: this })
+            sprite.events.onDragStop.add(this.onDragStop, { context: this })
+
+            // define drag snaping & bounds
+            sprite.input.enableSnap(SPRITE_SIZE, SPRITE_SIZE, true, true, X_OFFSET, Y_OFFSET)
+            sprite.input.boundsRect = new Phaser.Rectangle(X_OFFSET, Y_OFFSET, FIELD_WIDTH * SPRITE_SIZE, FIELD_HEIGHT * SPRITE_SIZE)
         }
         
         // add it to the right group
@@ -171,21 +177,29 @@ export default class Game {
 
     refresh(gameState = {}) {
         this.lastGameState = gameState
+        const isMyTurn = (gameState.turn === this.fieldId)
         const fieldIds = ['field1', 'field2']
 
         fieldIds.forEach(fieldId => {
+            const isMyUnit = (fieldId === this.fieldId)
+
             // destroy every sprite
             this.gameObjects.fields[fieldId].removeAll(true)
 
             // rebuild all sprites
             gameState[fieldId].grid.forEach((col, colId) => {
+                // 1st unit of each enemy column : its row depends on its size
                 let currentRow = 0
                 if (fieldId !== this.fieldId && col[0]) {
                     currentRow = col[0].size - 1
                 }
                 col.forEach((unit, idx, units) => {
-                    const draggable = (idx === units.length - 1)
-                    this.displayUnit(fieldId, colId, currentRow, unit, draggable)
+                    
+                    const options = {
+                        bindDelete: isMyTurn && isMyUnit,
+                        bindDrag: isMyTurn && isMyUnit && (idx === units.length - 1)
+                    }
+                    this.displayUnit(fieldId, colId, currentRow, unit, options)
 
                     if (fieldId === this.fieldId) {
                         currentRow += unit.size
@@ -208,15 +222,10 @@ export default class Game {
     }
 
     enableDrag(sprite, pointer) {
-        if (pointer.leftButton.isDown) {
-            // enable drag
+        if (pointer.leftButton.justPressed()) {
             sprite.input.enableDrag(true)
             sprite.input.setDragLock(true, false)
         }
-    }
-
-    disableDrag(sprite, pointer) {
-        sprite.input.disableDrag()
     }
     
     onDragUpdate(sprite, pointer, x, y, snapPoint) {
@@ -231,7 +240,7 @@ export default class Game {
     }
     
     onDragStop(sprite, pointer) {
-        if (this.context.lastGameState) {
+        if (pointer.leftButton.justReleased() && this.context.lastGameState) {
             const lastColId = this.context.lastGameState[this.context.fieldId].grid.findIndex(col => {
                 return !!col.find(unit => unit.uuid === sprite.name)
             })
@@ -239,6 +248,9 @@ export default class Game {
             if (lastColId !== -1 && lastColId !== newColId) {
                 this.context.moveUnit(sprite, newColId)
             }
+
+            // disable drag
+            sprite.input.disableDrag()
         }
     }
 }

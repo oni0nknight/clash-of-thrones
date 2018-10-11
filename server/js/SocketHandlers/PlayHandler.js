@@ -153,8 +153,8 @@ const getReqContext = (socket, players, games) => {
     let isMyTurn = false
     if (gameStarted) {
         isMyTurn = (
-            (game.gameInstance.turn === 1 && socket.id === game.playerId) ||
-            (game.gameInstance.turn === 2 && socket.id === game.joinedPlayerId)
+            (game.gameInstance.turn === 'field1' && socket.id === game.playerId) ||
+            (game.gameInstance.turn === 'field2' && socket.id === game.joinedPlayerId)
         )
     }
 

@@ -30,11 +30,11 @@ module.exports = class Game extends Serializable {
         this.field1 = new Field(width, height, player1Faction, startUnitCount)
         this.field2 = new Field(width, height, player2Faction, startUnitCount)
 
-        this.turn = 1 // 1 or 2 : indicates the player whose turn it is
+        this.turn = 'field1' // field1 or field2 : indicates the field whose turn it is
     }
 
     changeTurn() {
-        this.turn = this.turn === 1 ? 2 : 1
+        this.turn = this.turn === 'field1' ? 'field2' : 'field1'
     }
 
     serialize() {
