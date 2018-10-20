@@ -1,17 +1,24 @@
 'use strict'
 
 const Entity = require('./Entity')
+const WallAbility = require('./WallAbility')
+const DataHelper = require('../DataHelpers')
 
 module.exports = class Wall extends Entity {
     /**
      * @constructor
-     * @param {number} strength wall's strength
-     * @param {WallAbility} wallAbility wall's ability
+     * @param {string} faction the faction ID
+     * @param {string} color the color
      */
-    constructor(strength, wallAbility) {
-        super(strength)
+    constructor(faction, color) {
+        const wallInfos = DataHelper.getWallInfos(faction)
 
-        this.wallAbility = wallAbility
+        super(wallInfos.wallBaseStrength, faction, color, false)
+
+        this.type = 'wall'
+        this.wallAbility = new WallAbility(wallInfos.name, wallInfos.source)
+
+        this.wallInfos = wallInfos // store the wallInfos for runtime access. Should not be streamed
     }
 
     executeAbility(gameContext) {
@@ -21,6 +28,7 @@ module.exports = class Wall extends Entity {
     serialize() {
         return {
             ...super.serialize(),
+            type: this.type,
             wallAbility: this.wallAbility.serialize()
         }
     }

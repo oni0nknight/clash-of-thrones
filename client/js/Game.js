@@ -76,6 +76,7 @@ export default class Game {
         this.game.load.image('frame', frame)
         this.game.load.spritesheet('targaryens-normal', targaryensNormal, SPRITE_SIZE, SPRITE_SIZE)
         this.game.load.spritesheet('targaryens-elite', targaryensElite, SPRITE_SIZE, SPRITE_SIZE * 2)
+        this.game.load.spritesheet('targaryens-wall', targaryensNormal, SPRITE_SIZE, SPRITE_SIZE)
     }
 
     create() {
@@ -197,7 +198,7 @@ export default class Game {
                     
                     const options = {
                         bindDelete: isMyTurn && isMyUnit,
-                        bindDrag: isMyTurn && isMyUnit && (idx === units.length - 1)
+                        bindDrag: isMyTurn && isMyUnit && unit.movable && (idx === units.length - 1)
                     }
                     this.displayUnit(fieldId, colId, currentRow, unit, options)
 

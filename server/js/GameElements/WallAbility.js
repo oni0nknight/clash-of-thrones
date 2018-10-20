@@ -1,17 +1,15 @@
 'use strict'
 
 const Serializable = require('./Serializable')
-const DataHelper = require('../DataHelpers')
 const Logger = require('../Logger/Logger')
 
 module.exports = class WallAbility extends Serializable {
-    constructor(name) {
+    constructor(name, source) {
         super()
         this.name = name
 
         try {
-            const wallAbilityInfos = DataHelper.getWallAbilityInfos(name)
-            this.executor = new Function('context', 'wall', wallAbilityInfos.source)
+            this.executor = new Function('context', 'wall', source)
         } catch(err) {
             Logger.error(err)
             this.executor = new Function('return')

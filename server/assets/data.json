@@ -16,6 +16,7 @@
                     "strengthGain": 2
                 }
             },
+            "wall": "regenerate",
             "colors": [
                 "green", "red", "blue", "yellow", "white", "purple"
             ],
@@ -27,9 +28,10 @@
         }
     ],
 
-    "wallAbilities" : [
+    "walls" : [
         {
             "name": "regenerate",
+            "wallBaseStrength": 3,
             "source": "wall.strength++"
         }
     ]

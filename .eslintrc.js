@@ -330,7 +330,7 @@ module.exports =
 
 		// Specify the maximum depth that blocks can be nested
 		// https://eslint.org/docs/rules/max-depth
-		"max-depth": [ "error", 5 ],
+		"max-depth": [ "error", 6 ],
 
 		// Specify the maximum length of a line in your program
 		// https://eslint.org/docs/rules/max-len

@@ -20,12 +20,9 @@ module.exports = class Unit extends Entity {
     constructor(faction, type = 'normal', color) {
         const unitInfos = DataHelper.getUnitInfos(faction, type)
         
-        super(unitInfos.idleStrength)
+        super(unitInfos.idleStrength, faction, color, true)
 
-        this.faction = faction
         this.type = type
-        this.color = color
-
         this.packed = false
         this.attackDelay = unitInfos.attackDelay
 
@@ -58,10 +55,7 @@ module.exports = class Unit extends Entity {
     serialize() {
         return {
             ...super.serialize(),
-            faction: this.faction,
             type: this.type,
-            color: this.color,
-            size: this.size,
             packed: this.packed,
             attackDelay: this.attackDelay
         }

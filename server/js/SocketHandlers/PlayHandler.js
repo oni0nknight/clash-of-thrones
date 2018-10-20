@@ -85,12 +85,13 @@ const bindSocket = (io, socket, players, games) => {
         }
         Logger.log(socket.id, 'moving unit', uuid)
 
-        if (isHost(socket, context.game, players)) {
-            context.game.gameInstance.field1.moveUnit(uuid, newColId)
+        const field = isHost(socket, context.game, players) ? context.game.gameInstance.field1 : context.game.gameInstance.field2
+        const changes = field.moveUnit(uuid, newColId)
+
+        if (!changes.length) {
+            Logger.warn(socket.id, 'this move isn\'t allowed')
         }
-        else {
-            context.game.gameInstance.field2.moveUnit(uuid, newColId)
-        }
+
         updateGameState(context.game, players)
     })
 
