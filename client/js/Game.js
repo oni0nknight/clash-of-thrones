@@ -152,12 +152,17 @@ export default class Game {
             sprite.events.onInputDown.add(this.enableDrag, { context: this })
 
             // bind drag update & stop
-            sprite.events.onDragUpdate.add(this.onDragUpdate, { context: this })
+            sprite.events.onDragUpdate.add(this.onDragUpdate2, { context: this })
             sprite.events.onDragStop.add(this.onDragStop, { context: this })
 
-            // define drag snaping & bounds
-            sprite.input.enableSnap(SPRITE_SIZE, SPRITE_SIZE, true, true, X_OFFSET, Y_OFFSET)
+            // define bounds of drag
             sprite.input.boundsRect = new Phaser.Rectangle(X_OFFSET, Y_OFFSET, FIELD_WIDTH * SPRITE_SIZE, FIELD_HEIGHT * SPRITE_SIZE)
+
+            // create ghost sprite
+            const ghostSprite = new Phaser.Sprite(this.game, xpos, ypos, spritesheet, spriteFrames[unit.color])
+            ghostSprite.name = unit.uuid + '_ghost'
+            ghostSprite.alpha = 0.2
+            this.gameObjects.fields[fieldId].add(ghostSprite)
         }
         
         // add it to the right group
@@ -225,29 +230,46 @@ export default class Game {
     enableDrag(sprite, pointer) {
         if (pointer.leftButton.justPressed()) {
             sprite.input.enableDrag(true)
-            sprite.input.setDragLock(true, false)
         }
     }
-    
+
     onDragUpdate(sprite, pointer, x, y, snapPoint) {
         if (pointer.leftButton.isDown && this.context.lastGameState) {
-            const colId = Number.parseInt((snapPoint.x - X_OFFSET) / SPRITE_SIZE)
-            const column = this.context.lastGameState[this.context.fieldId].grid[colId]
-            const columnSize = column.reduce((acc, unit) => {
-                return acc + (unit.uuid !== sprite.name ? unit.size : 0)
-            }, 0)
-            sprite.y = Y_OFFSET + columnSize * SPRITE_SIZE
+            // find ghost sprite to update its position
+            const ghostSprite = this.context.gameObjects.fields[this.context.fieldId].getByName(sprite.name + '_ghost')
+            if (ghostSprite) {
+                const colId = Number.parseInt((pointer.x - X_OFFSET) / SPRITE_SIZE)
+                const column = this.context.lastGameState[this.context.fieldId].grid[colId]
+
+                // if column found
+                if (column) {
+                    const columnSize = column.reduce((acc, unit) => {
+                        return acc + (unit.uuid !== sprite.name ? unit.size : 0)
+                    }, 0)
+
+                    // update ghost sprite position
+                    ghostSprite.x = X_OFFSET + colId * SPRITE_SIZE
+                    ghostSprite.y = Y_OFFSET + columnSize * SPRITE_SIZE
+                }
+            }
         }
     }
     
     onDragStop(sprite, pointer) {
         if (pointer.leftButton.justReleased() && this.context.lastGameState) {
-            const lastColId = this.context.lastGameState[this.context.fieldId].grid.findIndex(col => {
-                return !!col.find(unit => unit.uuid === sprite.name)
-            })
-            const newColId = Number.parseInt((sprite.x - X_OFFSET) / SPRITE_SIZE)
-            if (lastColId !== -1 && lastColId !== newColId) {
-                this.context.moveUnit(sprite, newColId)
+            // find ghost sprite to get the new column for drop
+            const ghostSprite = this.context.gameObjects.fields[this.context.fieldId].getByName(sprite.name + '_ghost')
+            if (ghostSprite) {
+                const lastColId = this.context.lastGameState[this.context.fieldId].grid.findIndex(col => {
+                    return !!col.find(unit => unit.uuid === sprite.name)
+                })
+
+                // get new column from ghost's position
+                const newColId = Number.parseInt((ghostSprite.x - X_OFFSET) / SPRITE_SIZE)
+                if (lastColId !== -1 && lastColId !== newColId) {
+                    // make the move
+                    this.context.moveUnit(sprite, newColId)
+                }
             }
 
             // disable drag
