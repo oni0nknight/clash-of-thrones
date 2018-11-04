@@ -152,7 +152,7 @@ export default class Game {
             sprite.events.onInputDown.add(this.enableDrag, { context: this })
 
             // bind drag update & stop
-            sprite.events.onDragUpdate.add(this.onDragUpdate2, { context: this })
+            sprite.events.onDragUpdate.add(this.onDragUpdate, { context: this })
             sprite.events.onDragStop.add(this.onDragStop, { context: this })
 
             // define bounds of drag
@@ -269,6 +269,10 @@ export default class Game {
                 if (lastColId !== -1 && lastColId !== newColId) {
                     // make the move
                     this.context.moveUnit(sprite, newColId)
+                }
+                else {
+                    // rebuild last state
+                    this.context.refresh(this.context.lastGameState)
                 }
             }
 
