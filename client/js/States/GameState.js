@@ -10,9 +10,7 @@ export default class GameState extends AppState {
             header: $('#header'),
             gamePage: $('#game-container'),
             playerName: $('#playerName'),
-            factionSelect: $('#factionSelect'),
-
-            __DEBUGButton: $('#test_btn')
+            factionSelect: $('#factionSelect')
         }
 
         this.isHost = false
@@ -44,20 +42,12 @@ export default class GameState extends AppState {
         $('#game button[data-action="back"]').on('click', (e) => {
             this.leaveGame()
         })
-
-        // DEBUG
-        this.dom.__DEBUGButton.text('(DEBUG) reset game')
-        this.dom.__DEBUGButton.on('click', e => {
-            this.client.call('resetGame')
-        })
     }
 
     unBindEvents() {
         this.client.unsubscribe('gameDestroyed', this.gameDestroyed)
 
         $('#game button[data-action="back"]').off()
-
-        this.dom.__DEBUGButton.off()
     }
 
     show() {

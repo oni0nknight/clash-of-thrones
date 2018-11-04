@@ -95,6 +95,26 @@ const bindSocket = (io, socket, players, games) => {
         updateGameState(context.game, players)
     })
 
+    socket.on('endTurn', () => {
+        Logger.log(socket.id, 'requesting to end turn')
+        const context = getReqContext(socket, players, games)
+        if (!context) {
+            return
+        }
+        if (!context.isMyTurn) {
+            helpers.sendError(socket, '1005')
+            return
+        }
+        if (!context.gameStarted) {
+            helpers.sendError(socket, '1006')
+            return
+        }
+        Logger.log(socket.id, 'ending turn')
+
+        context.game.gameInstance.changeTurn()
+        updateGameState(context.game, players)
+    })
+
 
     // DEBUG COMMANDS
     //=======================================

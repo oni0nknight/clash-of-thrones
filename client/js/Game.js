@@ -3,6 +3,7 @@ window.p2 = require('phaser-ce/build/custom/p2')
 window.Phaser = require('phaser-ce/build/custom/phaser-split')
 
 import frame from '../assets/frame.png'
+import endOfTurn from '../assets/UI/end_of_turn.png'
 import targaryensNormal from '../assets/sprites/targaryensNormal.png'
 import targaryensElite from '../assets/sprites/targaryensElite.png'
 
@@ -36,7 +37,8 @@ export default class Game {
 
         this.gameObjects = {
             frame: null,
-            fields: []
+            fields: [],
+            ui: null
         }
 
         this.refresh = this.refresh.bind(this)
@@ -74,6 +76,7 @@ export default class Game {
 
     preload() {
         this.game.load.image('frame', frame)
+        this.game.load.image('endOfTurn', endOfTurn)
         this.game.load.spritesheet('targaryens-normal', targaryensNormal, SPRITE_SIZE, SPRITE_SIZE)
         this.game.load.spritesheet('targaryens-elite', targaryensElite, SPRITE_SIZE, SPRITE_SIZE * 2)
         this.game.load.spritesheet('targaryens-wall', targaryensNormal, SPRITE_SIZE, SPRITE_SIZE)
@@ -84,6 +87,8 @@ export default class Game {
 
         this.gameObjects.fields.field1 = this.game.add.group()
         this.gameObjects.fields.field2 = this.game.add.group()
+
+        this.gameObjects.ui = this.game.add.group()
 
         // subscibe to events
         this.client.subscribe('gameState_push', this.refresh)
@@ -189,10 +194,10 @@ export default class Game {
         fieldIds.forEach(fieldId => {
             const isMyUnit = (fieldId === this.fieldId)
 
-            // destroy every sprite
+            // destroy every unit sprite
             this.gameObjects.fields[fieldId].removeAll(true)
 
-            // rebuild all sprites
+            // rebuild all unit sprites
             gameState[fieldId].grid.forEach((col, colId) => {
                 // 1st unit of each enemy column : its row depends on its size
                 let currentRow = 0
@@ -215,10 +220,22 @@ export default class Game {
                     }
                 })
             })
+
+            // end of turn button
+            this.gameObjects.ui.removeAll(true)
+            if (isMyTurn) {
+                const button = new Phaser.Button(this.game, 82, 673, 'endOfTurn', this.endTurn, this)
+                this.gameObjects.ui.add(button)
+            }
         })
     }
 
+    endTurn() {
+        this.client.call('endTurn')
+    }
+
     // Input handlers
+    //============================================
 
     deleteUnit(sprite, pointer) {
         const pointerOnSprite = sprite.getBounds().contains(pointer.x, pointer.y)
