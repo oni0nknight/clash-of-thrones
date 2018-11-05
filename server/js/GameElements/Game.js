@@ -2,6 +2,7 @@
 
 const Field = require('./Field')
 const Serializable = require('./Serializable')
+const Change = require('./Change')
 
 const DEFAULT_CONF = {
     WIDTH: 7,
@@ -34,7 +35,15 @@ module.exports = class Game extends Serializable {
     }
 
     changeTurn() {
+        // change turn
         this.turn = this.turn === 'field1' ? 'field2' : 'field1'
+
+        // reset mana
+        this[this.turn].resetPlayerMana()
+
+        // return changes
+        const changes = [ new Change('turnChanged', {}) ]
+        return changes
     }
 
     serialize() {

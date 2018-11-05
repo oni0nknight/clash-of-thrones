@@ -3,6 +3,10 @@
 const Serializable = require('./Serializable')
 const DataHelper = require('../DataHelpers')
 
+const DEFAULT_CONF = {
+    MANA : 3
+}
+
 module.exports = class Player extends Serializable {
     /**
      * @constructor
@@ -16,6 +20,8 @@ module.exports = class Player extends Serializable {
         
         this.health = playerStats.health
 
+        this.mana = DEFAULT_CONF.MANA
+
         this.playerStats = playerStats // store the player stats for runtime access. Should not be streamed
         this.factionInfos = DataHelper.getFactionInfos(faction) // store the faction infos for runtime access. Should not be streamed
     }
@@ -28,6 +34,18 @@ module.exports = class Player extends Serializable {
         return this.factionInfos.colors
     }
 
+    hasMana() {
+        return this.mana > 0
+    }
+
+    consumeMana() {
+        this.mana--
+    }
+
+    resetMana() {
+        this.mana = DEFAULT_CONF.MANA
+    }
+
     takeDamage(damage) {
         this.health = Math.max(this.health - damage, 0)
     }
@@ -35,7 +53,8 @@ module.exports = class Player extends Serializable {
     serialize() {
         return {
             faction: this.faction,
-            health: this.health
+            health: this.health,
+            mana: this.mana
         }
     }
 }

@@ -8,7 +8,7 @@ const Game = require('../GameElements/Game')
 const gameParams = {
     width: 7,
     height: 7,
-    startUnitCount: 8
+    startUnitCount: 15
 }
 
 const bindSocket = (io, socket, players, games) => {
@@ -60,12 +60,13 @@ const bindSocket = (io, socket, players, games) => {
         }
         Logger.log(socket.id, 'removing unit', uuid)
 
-        if (isHost(socket, context.game, players)) {
-            context.game.gameInstance.field1.removeUnit(uuid)
+        const field = getField(socket, context.game, players)
+        const changes = field.removeUnit(uuid)
+
+        if (!changes.length) {
+            Logger.warn(socket.id, 'this action isn\'t allowed')
         }
-        else {
-            context.game.gameInstance.field2.removeUnit(uuid)
-        }
+
         updateGameState(context.game, players)
     })
 
@@ -85,11 +86,11 @@ const bindSocket = (io, socket, players, games) => {
         }
         Logger.log(socket.id, 'moving unit', uuid)
 
-        const field = isHost(socket, context.game, players) ? context.game.gameInstance.field1 : context.game.gameInstance.field2
+        const field = getField(socket, context.game, players)
         const changes = field.moveUnit(uuid, newColId)
 
         if (!changes.length) {
-            Logger.warn(socket.id, 'this move isn\'t allowed')
+            Logger.warn(socket.id, 'this action isn\'t allowed')
         }
 
         updateGameState(context.game, players)
@@ -111,7 +112,8 @@ const bindSocket = (io, socket, players, games) => {
         }
         Logger.log(socket.id, 'ending turn')
 
-        context.game.gameInstance.changeTurn()
+        const changes = context.game.gameInstance.changeTurn()
+
         updateGameState(context.game, players)
     })
 
@@ -200,6 +202,10 @@ const updateGameState = (game, players) => {
 
 const isHost = (socket, game, players) => {
     return players[socket.id].gameId === game.id && game.playerId === socket.id
+}
+
+const getField = (socket, game, players) => {
+    return isHost(socket, game, players) ? game.gameInstance.field1 : game.gameInstance.field2
 }
 
 module.exports = {

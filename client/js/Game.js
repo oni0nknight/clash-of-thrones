@@ -2,12 +2,20 @@ window.PIXI = require('phaser-ce/build/custom/pixi')
 window.p2 = require('phaser-ce/build/custom/p2')
 window.Phaser = require('phaser-ce/build/custom/phaser-split')
 
+// main frame
 import frame from '../assets/frame.png'
-import endOfTurn from '../assets/UI/end_of_turn.png'
+
+// spritesheets
 import targaryensNormal from '../assets/sprites/targaryensNormal.png'
 import targaryensElite from '../assets/sprites/targaryensElite.png'
 
+// UI
+import endOfTurn from '../assets/UI/end_of_turn.png'
+import mana from '../assets/UI/mana.png'
+
+
 const SPRITE_SIZE = 40
+const GHOST_ALPHA = 0.2
 
 const FIELD = {
     X : 30,
@@ -24,6 +32,10 @@ const ENNEMY_FIELD = {
 const UI = {
     END_TURN : {
         X : 82,
+        Y : 673
+    },
+    MANA : {
+        X : 277,
         Y : 673
     }
 }
@@ -90,10 +102,15 @@ export default class Game {
 
     preload() {
         this.game.load.image('frame', frame)
-        this.game.load.image('endOfTurn', endOfTurn)
+        
+        // sprites
         this.game.load.spritesheet('targaryens-normal', targaryensNormal, SPRITE_SIZE, SPRITE_SIZE)
         this.game.load.spritesheet('targaryens-elite', targaryensElite, SPRITE_SIZE, SPRITE_SIZE * 2)
         this.game.load.spritesheet('targaryens-wall', targaryensNormal, SPRITE_SIZE, SPRITE_SIZE)
+
+        // UI
+        this.game.load.image('endOfTurn', endOfTurn)
+        this.game.load.image('mana', mana)
     }
 
     create() {
@@ -180,7 +197,7 @@ export default class Game {
             // create ghost sprite
             const ghostSprite = new Phaser.Sprite(this.game, xpos, ypos, spritesheet, spriteFrames[unit.color])
             ghostSprite.name = unit.uuid + '_ghost'
-            ghostSprite.alpha = 0.2
+            ghostSprite.alpha = GHOST_ALPHA
             sprite.ghost = ghostSprite
             this.gameObjects.fields[fieldId].add(ghostSprite)
         }
@@ -201,11 +218,17 @@ export default class Game {
     // Events
     //============================================
 
-    refresh(gameState = {}) {
+    refresh(gameState) {
+        if (!gameState) {
+            return
+        }
+
         this.lastGameState = gameState
         const isMyTurn = (gameState.turn === this.fieldId)
+        const hasMana = gameState[this.fieldId].player.mana > 0
         const fieldIds = ['field1', 'field2']
 
+        // rebuild fields
         fieldIds.forEach(fieldId => {
             const isMyUnit = (fieldId === this.fieldId)
 
@@ -222,8 +245,8 @@ export default class Game {
                 col.forEach((unit, idx, units) => {
                     
                     const options = {
-                        bindDelete: isMyTurn && isMyUnit,
-                        bindDrag: isMyTurn && isMyUnit && unit.movable && (idx === units.length - 1)
+                        bindDelete: isMyTurn && isMyUnit && hasMana,
+                        bindDrag: isMyTurn && isMyUnit && hasMana && unit.movable && (idx === units.length - 1)
                     }
                     this.displayUnit(fieldId, colId, currentRow, unit, options)
 
@@ -235,14 +258,28 @@ export default class Game {
                     }
                 })
             })
-
-            // end of turn button
-            this.gameObjects.ui.removeAll(true)
-            if (isMyTurn) {
-                const button = new Phaser.Button(this.game, UI.END_TURN.X, UI.END_TURN.Y, 'endOfTurn', this.endTurn, this)
-                this.gameObjects.ui.add(button)
-            }
         })
+
+        // rebuild UI
+        this.gameObjects.ui.removeAll(true)
+        if (isMyTurn) {
+            // end-of-turn button
+            const button = new Phaser.Button(this.game, UI.END_TURN.X, UI.END_TURN.Y, 'endOfTurn', this.endTurn, this)
+            this.gameObjects.ui.add(button)
+
+            // mana counter frame
+            const manaFrame = new Phaser.Image(this.game, UI.MANA.X, UI.MANA.Y, 'mana')
+            this.gameObjects.ui.add(manaFrame)
+
+            // mana counter text
+            const style = { font: '30px Helvetica', fill: '#1a1a1a', boundsAlignH: 'center', boundsAlignV: 'middle' }
+            const manaText = new Phaser.Text(this.game, 0, 0, gameState[this.fieldId].player.mana, style)
+            // manaText.anchor.set(0.5, 0.5)
+            manaText.setTextBounds(UI.MANA.X, UI.MANA.Y + 2, manaFrame.width, manaFrame.height)
+            // manaText.x = Math.floor(manaFrame.x + manaFrame.width / 2)
+            // manaText.y = Math.floor(manaFrame.y + manaFrame.height / 2)
+            this.gameObjects.ui.add(manaText)
+        }
     }
 
     endTurn() {
@@ -271,6 +308,9 @@ export default class Game {
             const colId = Number.parseInt((pointer.x - FIELD.X) / SPRITE_SIZE)
             const column = this.context.lastGameState[this.context.fieldId].grid[colId]
 
+            // set to front
+            this.context.gameObjects.fields[this.context.fieldId].bringToTop(sprite)
+
             // if column found
             if (column) {
                 const columnSize = column.reduce((acc, unit) => {
@@ -280,6 +320,9 @@ export default class Game {
                 // update ghost sprite position
                 sprite.ghost.x = FIELD.X + colId * SPRITE_SIZE
                 sprite.ghost.y = FIELD.Y + columnSize * SPRITE_SIZE
+
+                // hide ghost if no place left
+                sprite.ghost.alpha = columnSize >= FIELD.HEIGHT ? 0 : GHOST_ALPHA
             }
         }
     }
@@ -302,8 +345,5 @@ export default class Game {
                 this.context.refresh(this.context.lastGameState)
             }
         }
-
-        // disable drag
-        sprite.input.disableDrag()
     }
 }
