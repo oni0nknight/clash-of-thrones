@@ -176,6 +176,7 @@ export default class Game {
         // instanciate sprite
         const sprite = new Phaser.Sprite(this.game, xpos, ypos, spritesheet, spriteFrames[unit.color])
         sprite.name = unit.uuid
+        sprite.unit = unit
 
         if (options.bindDelete) {
             // enable inputs
@@ -327,7 +328,7 @@ export default class Game {
                 sprite.ghost.y = FIELD.Y + columnSize * SPRITE_SIZE
 
                 // hide ghost if no place left
-                sprite.ghost.alpha = columnSize >= FIELD.HEIGHT ? 0 : GHOST_ALPHA
+                sprite.ghost.alpha = (columnSize + sprite.unit.size > FIELD.HEIGHT) ? 0 : GHOST_ALPHA
             }
         }
     }
