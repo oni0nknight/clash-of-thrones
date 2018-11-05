@@ -7,12 +7,26 @@ import endOfTurn from '../assets/UI/end_of_turn.png'
 import targaryensNormal from '../assets/sprites/targaryensNormal.png'
 import targaryensElite from '../assets/sprites/targaryensElite.png'
 
-const X_OFFSET = 30
-const Y_OFFSET = 379
-const Y_ENNEMY_OFFSET = 299
 const SPRITE_SIZE = 40
-const FIELD_WIDTH = 7
-const FIELD_HEIGHT = 7
+
+const FIELD = {
+    X : 30,
+    Y : 379,
+    WIDTH : 7,
+    HEIGHT : 7
+}
+FIELD.RECT = new Phaser.Rectangle(FIELD.X, FIELD.Y, FIELD.WIDTH * SPRITE_SIZE, FIELD.HEIGHT * SPRITE_SIZE)
+
+const ENNEMY_FIELD = {
+    Y : 299
+}
+
+const UI = {
+    END_TURN : {
+        X : 82,
+        Y : 673
+    }
+}
 
 const spriteFrames = {
     green: 0,
@@ -126,15 +140,15 @@ export default class Game {
         const spritesheet = this.faction + '-' + unit.type
 
         // compute position
-        const xpos = X_OFFSET + col * SPRITE_SIZE
+        const xpos = FIELD.X + col * SPRITE_SIZE
         let ypos = 0
         if (fieldId === this.fieldId) {
             // field of the player
-            ypos = Y_OFFSET + row * SPRITE_SIZE
+            ypos = FIELD.Y + row * SPRITE_SIZE
         }
         else {
             // field of the ennemy
-            ypos = Y_ENNEMY_OFFSET - row * SPRITE_SIZE
+            ypos = ENNEMY_FIELD.Y - row * SPRITE_SIZE
         }
 
         // instanciate sprite
@@ -161,7 +175,7 @@ export default class Game {
             sprite.events.onDragStop.add(this.onDragStop, { context: this })
 
             // define bounds of drag
-            sprite.input.boundsRect = new Phaser.Rectangle(X_OFFSET, Y_OFFSET, FIELD_WIDTH * SPRITE_SIZE, FIELD_HEIGHT * SPRITE_SIZE)
+            sprite.input.boundsRect = FIELD.RECT
 
             // create ghost sprite
             const ghostSprite = new Phaser.Sprite(this.game, xpos, ypos, spritesheet, spriteFrames[unit.color])
@@ -224,7 +238,7 @@ export default class Game {
             // end of turn button
             this.gameObjects.ui.removeAll(true)
             if (isMyTurn) {
-                const button = new Phaser.Button(this.game, 82, 673, 'endOfTurn', this.endTurn, this)
+                const button = new Phaser.Button(this.game, UI.END_TURN.X, UI.END_TURN.Y, 'endOfTurn', this.endTurn, this)
                 this.gameObjects.ui.add(button)
             }
         })
@@ -255,7 +269,7 @@ export default class Game {
             // find ghost sprite to update its position
             const ghostSprite = this.context.gameObjects.fields[this.context.fieldId].getByName(sprite.name + '_ghost')
             if (ghostSprite) {
-                const colId = Number.parseInt((pointer.x - X_OFFSET) / SPRITE_SIZE)
+                const colId = Number.parseInt((pointer.x - FIELD.X) / SPRITE_SIZE)
                 const column = this.context.lastGameState[this.context.fieldId].grid[colId]
 
                 // if column found
@@ -265,8 +279,8 @@ export default class Game {
                     }, 0)
 
                     // update ghost sprite position
-                    ghostSprite.x = X_OFFSET + colId * SPRITE_SIZE
-                    ghostSprite.y = Y_OFFSET + columnSize * SPRITE_SIZE
+                    ghostSprite.x = FIELD.X + colId * SPRITE_SIZE
+                    ghostSprite.y = FIELD.Y + columnSize * SPRITE_SIZE
                 }
             }
         }
@@ -282,7 +296,7 @@ export default class Game {
                 })
 
                 // get new column from ghost's position
-                const newColId = Number.parseInt((ghostSprite.x - X_OFFSET) / SPRITE_SIZE)
+                const newColId = Number.parseInt((ghostSprite.x - FIELD.X) / SPRITE_SIZE)
                 if (lastColId !== -1 && lastColId !== newColId) {
                     // make the move
                     this.context.moveUnit(sprite, newColId)
