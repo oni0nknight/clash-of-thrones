@@ -7,7 +7,10 @@ import frame from '../assets/frame.png'
 
 // spritesheets
 import targaryensNormal from '../assets/sprites/targaryensNormal.png'
+import targaryensNormalPacked from '../assets/sprites/targaryensNormalPacked.png'
 import targaryensElite from '../assets/sprites/targaryensElite.png'
+import targaryensElitePacked from '../assets/sprites/targaryensElitePacked.png'
+import targaryensWall from '../assets/sprites/targaryensWall.png'
 
 // UI
 import endOfTurn from '../assets/UI/end_of_turn.png'
@@ -106,7 +109,9 @@ export default class Game {
         // sprites
         this.game.load.spritesheet('targaryens-normal', targaryensNormal, SPRITE_SIZE, SPRITE_SIZE)
         this.game.load.spritesheet('targaryens-elite', targaryensElite, SPRITE_SIZE, SPRITE_SIZE * 2)
-        this.game.load.spritesheet('targaryens-wall', targaryensNormal, SPRITE_SIZE, SPRITE_SIZE)
+        this.game.load.spritesheet('targaryens-wall', targaryensWall, SPRITE_SIZE, SPRITE_SIZE)
+        this.game.load.spritesheet('targaryens-normal-packed', targaryensNormalPacked, SPRITE_SIZE, SPRITE_SIZE * 3)
+        this.game.load.spritesheet('targaryens-elite-packed', targaryensElitePacked, SPRITE_SIZE, SPRITE_SIZE * 3)
 
         // UI
         this.game.load.image('endOfTurn', endOfTurn)
@@ -154,7 +159,7 @@ export default class Game {
 
     displayUnit(fieldId, col, row, unit, options) {
         // find spritesheet
-        const spritesheet = this.faction + '-' + unit.type
+        const spritesheet = this.faction + '-' + unit.type + (unit.packed ? '-packed' : '')
 
         // compute position
         const xpos = FIELD.X + col * SPRITE_SIZE

@@ -115,7 +115,7 @@ module.exports =
 		// https://eslint.org/docs/rules/no-magic-numbers
 		"no-magic-numbers": [ "error",
 		{
-			"ignore": [ 0, 0.5, 1, -1, 2 ],
+			"ignore": [ 0, 0.5, 1, -1, 2, 3 ],
 			"ignoreArrayIndexes": true,
 			"enforceConst": true,
 			"detectObjects": false
