@@ -181,6 +181,7 @@ export default class Game {
             const ghostSprite = new Phaser.Sprite(this.game, xpos, ypos, spritesheet, spriteFrames[unit.color])
             ghostSprite.name = unit.uuid + '_ghost'
             ghostSprite.alpha = 0.2
+            sprite.ghost = ghostSprite
             this.gameObjects.fields[fieldId].add(ghostSprite)
         }
         
@@ -265,50 +266,44 @@ export default class Game {
     }
 
     onDragUpdate(sprite, pointer, x, y, snapPoint) {
-        if (pointer.leftButton.isDown && this.context.lastGameState) {
-            // find ghost sprite to update its position
-            const ghostSprite = this.context.gameObjects.fields[this.context.fieldId].getByName(sprite.name + '_ghost')
-            if (ghostSprite) {
-                const colId = Number.parseInt((pointer.x - FIELD.X) / SPRITE_SIZE)
-                const column = this.context.lastGameState[this.context.fieldId].grid[colId]
+        // update ghost position if drag is from left button
+        if (pointer.leftButton.isDown && this.context.lastGameState && sprite.ghost) {
+            const colId = Number.parseInt((pointer.x - FIELD.X) / SPRITE_SIZE)
+            const column = this.context.lastGameState[this.context.fieldId].grid[colId]
 
-                // if column found
-                if (column) {
-                    const columnSize = column.reduce((acc, unit) => {
-                        return acc + (unit.uuid !== sprite.name ? unit.size : 0)
-                    }, 0)
+            // if column found
+            if (column) {
+                const columnSize = column.reduce((acc, unit) => {
+                    return acc + (unit.uuid !== sprite.name ? unit.size : 0)
+                }, 0)
 
-                    // update ghost sprite position
-                    ghostSprite.x = FIELD.X + colId * SPRITE_SIZE
-                    ghostSprite.y = FIELD.Y + columnSize * SPRITE_SIZE
-                }
+                // update ghost sprite position
+                sprite.ghost.x = FIELD.X + colId * SPRITE_SIZE
+                sprite.ghost.y = FIELD.Y + columnSize * SPRITE_SIZE
             }
         }
     }
     
     onDragStop(sprite, pointer) {
-        if (pointer.leftButton.justReleased() && this.context.lastGameState) {
-            // find ghost sprite to get the new column for drop
-            const ghostSprite = this.context.gameObjects.fields[this.context.fieldId].getByName(sprite.name + '_ghost')
-            if (ghostSprite) {
-                const lastColId = this.context.lastGameState[this.context.fieldId].grid.findIndex(col => {
-                    return !!col.find(unit => unit.uuid === sprite.name)
-                })
+        // make (or cancel) the move
+        if (pointer.leftButton.justReleased() && this.context.lastGameState && sprite.ghost) {
+            const lastColId = this.context.lastGameState[this.context.fieldId].grid.findIndex(col => {
+                return !!col.find(unit => unit.uuid === sprite.name)
+            })
 
-                // get new column from ghost's position
-                const newColId = Number.parseInt((ghostSprite.x - FIELD.X) / SPRITE_SIZE)
-                if (lastColId !== -1 && lastColId !== newColId) {
-                    // make the move
-                    this.context.moveUnit(sprite, newColId)
-                }
-                else {
-                    // rebuild last state
-                    this.context.refresh(this.context.lastGameState)
-                }
+            // get new column from ghost's position
+            const newColId = Number.parseInt((sprite.ghost.x - FIELD.X) / SPRITE_SIZE)
+            if (lastColId !== -1 && lastColId !== newColId) {
+                // make the move
+                this.context.moveUnit(sprite, newColId)
             }
-
-            // disable drag
-            sprite.input.disableDrag()
+            else {
+                // rebuild last state
+                this.context.refresh(this.context.lastGameState)
+            }
         }
+
+        // disable drag
+        sprite.input.disableDrag()
     }
 }
