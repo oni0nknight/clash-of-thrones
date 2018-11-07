@@ -96,6 +96,28 @@ const bindSocket = (io, socket, players, games) => {
         updateGameState(context.game, players)
     })
 
+    socket.on('reinforce', () => {
+        Logger.log(socket.id, 'requesting to reinforce')
+        const context = getReqContext(socket, players, games)
+        if (!context) {
+            return
+        }
+        if (!context.isMyTurn) {
+            helpers.sendError(socket, '1005')
+            return
+        }
+        if (!context.gameStarted) {
+            helpers.sendError(socket, '1006')
+            return
+        }
+        Logger.log(socket.id, 'reinforcing')
+
+        const field = getField(socket, context.game, players)
+        const changes = field.reinforce()
+
+        updateGameState(context.game, players)
+    })
+
     socket.on('endTurn', () => {
         Logger.log(socket.id, 'requesting to end turn')
         const context = getReqContext(socket, players, games)

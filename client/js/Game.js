@@ -290,7 +290,7 @@ export default class Game {
             this.gameObjects.ui.add(manaText)
 
             // reinforcement counter frame
-            const unitsFrame = new Phaser.Image(this.game, UI.UNITS.X, UI.UNITS.Y, 'units')
+            const unitsFrame = new Phaser.Button(this.game, UI.UNITS.X, UI.UNITS.Y, 'units', this.reinforce, this)
             this.gameObjects.ui.add(unitsFrame)
 
             // reinforcement counter text
@@ -363,6 +363,12 @@ export default class Game {
                 // rebuild last state
                 this.context.refresh(this.context.lastGameState)
             }
+        }
+    }
+
+    reinforce(image, pointer) {
+        if (pointer.leftButton.justReleased()) {
+            this.client.call('reinforce')
         }
     }
 }

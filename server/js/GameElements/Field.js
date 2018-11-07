@@ -56,7 +56,7 @@ module.exports = class Field extends Serializable {
             unitInfos.column.splice(index, 1)
 
             // increment reinforcement
-            this.player.reinforcement++
+            this.player.reinforcement += unitInfos.unit.packed ? 3 : 1
 
             // consume mana
             this.player.consumeMana()
