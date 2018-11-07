@@ -7,7 +7,7 @@ const Change = require('./Change')
 const DEFAULT_CONF = {
     WIDTH: 7,
     HEIGHT: 7,
-    START_UNIT_COUNT : 8
+    START_UNIT_COUNT : 20
 }
 
 module.exports = class Game extends Serializable {

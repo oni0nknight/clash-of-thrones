@@ -8,7 +8,7 @@ const Game = require('../GameElements/Game')
 const gameParams = {
     width: 7,
     height: 7,
-    startUnitCount: 15
+    startUnitCount: 20
 }
 
 const bindSocket = (io, socket, players, games) => {
