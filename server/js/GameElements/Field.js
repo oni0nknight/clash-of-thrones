@@ -195,13 +195,21 @@ module.exports = class Field extends Serializable {
                 columnDone = true
                 for (let baseIndex = 0; baseIndex < columnLength; baseIndex++) {
                     const baseUnit = column[baseIndex]
-                    let endIndex = baseIndex
-                    while (column[endIndex+1] && column[endIndex+1].color === baseUnit.color && column[endIndex+1].type === 'normal') {
-                        endIndex++
+
+                    // forbid to stack packs
+                    if (baseUnit.packed) {
+                        continue
                     }
 
-                    // if we find a stack
-                    if (endIndex - baseIndex + 1 >= STACK_NUMBER) {
+                    // compute the number of similar units
+                    let endIndex = baseIndex
+                    while (column[endIndex+1] && column[endIndex+1].color === baseUnit.color && column[endIndex+1].type === 'normal' && !column[endIndex+1].packed) {
+                        endIndex++
+                    }
+                    const similarUnits = endIndex - baseIndex + 1
+
+                    // if stack is found
+                    if (similarUnits >= STACK_NUMBER) {
                         // create a packed unit
                         const packedUnit = this.instanciateUnit(baseUnit.type, baseUnit.color)
                         packedUnit.pack()
@@ -237,33 +245,37 @@ module.exports = class Field extends Serializable {
             for (let colId = 0; colId < this.width; colId++) {
                 const unit = this.getUnitAt(colId, rowId)
 
+                // update similar units stack
                 if (unit && unit.type === 'normal') {
-                    const unitSimilar = similarUnits.length ? unit.color === similarUnits[0].color : true
-                    if (unitSimilar) {
+                    const isUnitSimilar = similarUnits.length ? unit.color === similarUnits[0].color : true
+                    if (isUnitSimilar) {
                         similarUnits.push(unit)
-
-                        // if stack is found
-                        if (similarUnits.length >= STACK_NUMBER) {
-                            // transform all idle units into walls
-                            for (let i = 0; i < STACK_NUMBER; i++) {
-                                const unitToRemove = similarUnits[STACK_NUMBER - 1 - i]
-                                const indexToRemove = this.grid[colId - i].indexOf(unitToRemove)
-                                const wall = new Wall(unitToRemove.faction, unitToRemove.color)
-
-                                // add the change
-                                changes.push(new Change('WallFormed', {uuid: wall.uuid}))
-
-                                // remove old unit and add the wall
-                                this.grid[colId - i].splice(indexToRemove, 1, wall)
-                            }
-
-                            // reinit similarUnits
-                            similarUnits = []
-                        }
+                    }
+                    else {
+                        similarUnits = [ unit ]
                     }
                 }
                 else {
-                    // in other cases, reinit similarUnits
+                    similarUnits = []
+                }
+
+                // if stack is found
+                if (similarUnits.length >= STACK_NUMBER) {
+                    // transform all idle units into walls
+                    for (let i = 0; i < STACK_NUMBER; i++) {
+                        const unitToRemove = similarUnits[STACK_NUMBER - 1 - i]
+                        const columnOfUnitToRemove = this.grid[colId - i]
+                        const indexToRemove = columnOfUnitToRemove.indexOf(unitToRemove)
+                        const wall = new Wall(unitToRemove.faction, unitToRemove.color)
+
+                        // remove old unit and add the wall
+                        columnOfUnitToRemove.splice(indexToRemove, 1, wall)
+
+                        // add the change
+                        changes.push(new Change('WallFormed', {uuid: wall.uuid}))
+                    }
+
+                    // reinit similarUnits
                     similarUnits = []
                 }
             }
@@ -297,7 +309,7 @@ module.exports = class Field extends Serializable {
         return unitInfos
     }
 
-    getUnitAt(columnNumber, rowNumber) {
+    getUnitAt2(columnNumber, rowNumber) {
         const column = this.grid[columnNumber]
         let unit = column[0]
         let currentRowId = 0
@@ -317,6 +329,18 @@ module.exports = class Field extends Serializable {
         }
 
         return unit ? unit : null
+    }
+
+    getUnitAt(columnNumber, rowNumber) {
+        const column = this.grid[columnNumber]
+
+        // build a scheme of the column (insert n times each unit, where n is its size)
+        const scheme = column.reduce((acc, unit) => {
+            acc.push(...Array(unit.size).fill(unit))
+            return acc
+        }, [])
+
+        return scheme[rowNumber] ? scheme[rowNumber] : null
     }
 
     getFreeSpace(columnNumber) {
