@@ -11,12 +11,14 @@ module.exports = class Player extends Serializable {
     /**
      * @constructor
      * @param {string} faction
+     * @param {number} startUnitCount number of units to instanciate at initialization
      */
-    constructor(faction) {
+    constructor(faction, startUnitCount) {
         super()
         const playerStats = DataHelper.getPlayerStats(faction)
 
         this.faction = faction
+        this.reinforcement = startUnitCount
         
         this.health = playerStats.health
 
@@ -34,6 +36,9 @@ module.exports = class Player extends Serializable {
         return this.factionInfos.colors
     }
 
+    // Mana
+    //=======================================
+
     hasMana() {
         return this.mana > 0
     }
@@ -46,6 +51,10 @@ module.exports = class Player extends Serializable {
         this.mana = DEFAULT_CONF.MANA
     }
 
+
+    // Health
+    //=======================================
+
     takeDamage(damage) {
         this.health = Math.max(this.health - damage, 0)
     }
@@ -54,7 +63,8 @@ module.exports = class Player extends Serializable {
         return {
             faction: this.faction,
             health: this.health,
-            mana: this.mana
+            mana: this.mana,
+            reinforcement: this.reinforcement
         }
     }
 }

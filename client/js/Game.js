@@ -3,18 +3,19 @@ window.p2 = require('phaser-ce/build/custom/p2')
 window.Phaser = require('phaser-ce/build/custom/phaser-split')
 
 // main frame
-import frame from '../assets/frame.png'
+import _frame from '../assets/frame.png'
 
 // spritesheets
-import targaryensNormal from '../assets/sprites/targaryensNormal.png'
-import targaryensNormalPacked from '../assets/sprites/targaryensNormalPacked.png'
-import targaryensElite from '../assets/sprites/targaryensElite.png'
-import targaryensElitePacked from '../assets/sprites/targaryensElitePacked.png'
-import targaryensWall from '../assets/sprites/targaryensWall.png'
+import _targaryensNormal from '../assets/sprites/targaryensNormal.png'
+import _targaryensNormalPacked from '../assets/sprites/targaryensNormalPacked.png'
+import _targaryensElite from '../assets/sprites/targaryensElite.png'
+import _targaryensElitePacked from '../assets/sprites/targaryensElitePacked.png'
+import _targaryensWall from '../assets/sprites/targaryensWall.png'
 
 // UI
-import endOfTurn from '../assets/UI/end_of_turn.png'
-import mana from '../assets/UI/mana.png'
+import _endOfTurn from '../assets/UI/end_of_turn.png'
+import _mana from '../assets/UI/manaFrame.png'
+import _units from '../assets/UI/unitsFrame.png'
 
 
 const SPRITE_SIZE = 40
@@ -39,6 +40,10 @@ const UI = {
     },
     MANA : {
         X : 277,
+        Y : 673
+    },
+    UNITS : {
+        X : 25,
         Y : 673
     }
 }
@@ -104,18 +109,19 @@ export default class Game {
     }
 
     preload() {
-        this.game.load.image('frame', frame)
+        this.game.load.image('frame', _frame)
         
         // sprites
-        this.game.load.spritesheet('targaryens-normal', targaryensNormal, SPRITE_SIZE, SPRITE_SIZE)
-        this.game.load.spritesheet('targaryens-elite', targaryensElite, SPRITE_SIZE, SPRITE_SIZE * 2)
-        this.game.load.spritesheet('targaryens-wall', targaryensWall, SPRITE_SIZE, SPRITE_SIZE)
-        this.game.load.spritesheet('targaryens-normal-packed', targaryensNormalPacked, SPRITE_SIZE, SPRITE_SIZE * 3)
-        this.game.load.spritesheet('targaryens-elite-packed', targaryensElitePacked, SPRITE_SIZE, SPRITE_SIZE * 3)
+        this.game.load.spritesheet('targaryens-normal', _targaryensNormal, SPRITE_SIZE, SPRITE_SIZE)
+        this.game.load.spritesheet('targaryens-elite', _targaryensElite, SPRITE_SIZE, SPRITE_SIZE * 2)
+        this.game.load.spritesheet('targaryens-wall', _targaryensWall, SPRITE_SIZE, SPRITE_SIZE)
+        this.game.load.spritesheet('targaryens-normal-packed', _targaryensNormalPacked, SPRITE_SIZE, SPRITE_SIZE * 3)
+        this.game.load.spritesheet('targaryens-elite-packed', _targaryensElitePacked, SPRITE_SIZE, SPRITE_SIZE * 3)
 
         // UI
-        this.game.load.image('endOfTurn', endOfTurn)
-        this.game.load.image('mana', mana)
+        this.game.load.image('endOfTurn', _endOfTurn)
+        this.game.load.image('mana', _mana)
+        this.game.load.image('units', _units)
     }
 
     create() {
@@ -278,13 +284,20 @@ export default class Game {
             this.gameObjects.ui.add(manaFrame)
 
             // mana counter text
-            const style = { font: '30px Helvetica', fill: '#1a1a1a', boundsAlignH: 'center', boundsAlignV: 'middle' }
-            const manaText = new Phaser.Text(this.game, 0, 0, gameState[this.fieldId].player.mana, style)
-            // manaText.anchor.set(0.5, 0.5)
+            const manaStyle = { font: '30px Helvetica', fill: '#1a1a1a', boundsAlignH: 'center', boundsAlignV: 'middle' }
+            const manaText = new Phaser.Text(this.game, 0, 0, gameState[this.fieldId].player.mana, manaStyle)
             manaText.setTextBounds(UI.MANA.X, UI.MANA.Y + 2, manaFrame.width, manaFrame.height)
-            // manaText.x = Math.floor(manaFrame.x + manaFrame.width / 2)
-            // manaText.y = Math.floor(manaFrame.y + manaFrame.height / 2)
             this.gameObjects.ui.add(manaText)
+
+            // reinforcement counter frame
+            const unitsFrame = new Phaser.Image(this.game, UI.UNITS.X, UI.UNITS.Y, 'units')
+            this.gameObjects.ui.add(unitsFrame)
+
+            // reinforcement counter text
+            const unitsStyle = { font: '30px Helvetica', fill: '#1a1a1a', boundsAlignH: 'center', boundsAlignV: 'middle' }
+            const unitsText = new Phaser.Text(this.game, 0, 0, gameState[this.fieldId].player.reinforcement, unitsStyle)
+            unitsText.setTextBounds(UI.UNITS.X, UI.UNITS.Y + 2, unitsFrame.width, unitsFrame.height)
+            this.gameObjects.ui.add(unitsText)
         }
     }
 

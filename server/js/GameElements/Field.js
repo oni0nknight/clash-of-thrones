@@ -20,11 +20,9 @@ module.exports = class Field extends Serializable {
      */
     constructor(width, height, faction, startUnitCount) {
         super()
-        this.player = new Player(faction)
+        this.player = new Player(faction, startUnitCount)
         this.width = width
         this.height = height
-
-        this.reinforcement = startUnitCount
 
         this.grid = []
         for (let i = 0; i < width; ++i) {
@@ -58,7 +56,7 @@ module.exports = class Field extends Serializable {
             unitInfos.column.splice(index, 1)
 
             // increment reinforcement
-            this.reinforcement++
+            this.player.reinforcement++
 
             // consume mana
             this.player.consumeMana()
@@ -124,7 +122,7 @@ module.exports = class Field extends Serializable {
         this.player.consumeMana()
 
         let fieldFull = false
-        while (this.reinforcement > 0 && !fieldFull) {
+        while (this.player.reinforcement > 0 && !fieldFull) {
             // create unit
             const elitesOnGrid = this.grid.reduce((acc1, column) => {
                 return acc1 + column.reduce((acc2, unit) => {
@@ -150,7 +148,7 @@ module.exports = class Field extends Serializable {
                 column.push(unit)
 
                 // decrement reinforcement
-                this.reinforcement--
+                this.player.reinforcement--
 
                 // manage changes
                 changes.push(new Change('unitAdded', {uuid: unit.uuid}))
@@ -366,7 +364,6 @@ module.exports = class Field extends Serializable {
             player: this.player.serialize(),
             width: this.width,
             height: this.height,
-            reinforcement: this.reinforcement,
             grid: this.grid.map(col => col.map(unit => unit.serialize()))
         }
     }
