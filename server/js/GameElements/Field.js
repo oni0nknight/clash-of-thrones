@@ -10,6 +10,12 @@ const EliteProbability = 0.3
 
 const STACK_NUMBER = 3
 
+const DEFAULT_CONF = {
+    WIDTH: 7,
+    HEIGHT: 7,
+    START_UNIT_COUNT : 20
+}
+
 module.exports = class Field extends Serializable {
     /**
      * @constructor
@@ -18,22 +24,27 @@ module.exports = class Field extends Serializable {
      * @param {string} faction the player faction
      * @param {number} startUnitCount number of units to instanciate at initialization
      */
-    constructor(width, height, faction, startUnitCount) {
+    constructor(game, config) {
         super()
-        this.player = new Player(faction, startUnitCount)
-        this.width = width
-        this.height = height
+
+        this.game = game // do not serialize this attribute
+
+        const startUnitCount = config.startUnitCount ? config.startUnitCount : DEFAULT_CONF.START_UNIT_COUNT
+        this.player = new Player(config.faction, startUnitCount)
+
+        this.width = config.width ? config.width : DEFAULT_CONF.WIDTH
+        this.height = config.height ? config.height : DEFAULT_CONF.HEIGHT
 
         this.grid = []
-        for (let i = 0; i < width; ++i) {
+        for (let i = 0; i < this.width; ++i) {
             this.grid.push([])
         }
 
         // initialize grid
         this.reinforce()
 
-        // init player mana
-        this.resetPlayerMana()
+        // reset mana
+        this.player.resetMana()
     }
 
     // State mutators
@@ -169,8 +180,19 @@ module.exports = class Field extends Serializable {
     //=======================================
 
     evolvePacks() {
-        this.getAllPacks().forEach(pack => {
-            pack.evolve()
+        // evolve all packs and perform attacks
+        this.grid.forEach(column => {
+            column.forEach(unit => {
+                if (unit.packed) {
+                    // evolve the unit
+                    unit.evolve()
+
+                    // attack if necessary
+                    if (unit.attackDelay <= 0) {
+                        this.attack(column, unit)
+                    }
+                }
+            })
         })
     }
 
@@ -282,6 +304,14 @@ module.exports = class Field extends Serializable {
         return changes
     }
 
+    attack(column, unit) {
+        // get other player's corresponding column ==> use this.game
+
+        // build the column scheme
+
+        // attack
+    }
+
     
     // Helpers
     //=======================================
@@ -307,28 +337,6 @@ module.exports = class Field extends Serializable {
         return unitInfos
     }
 
-    getUnitAt2(columnNumber, rowNumber) {
-        const column = this.grid[columnNumber]
-        let unit = column[0]
-        let currentRowId = 0
-        let currentRowRealId = 0
-
-        while (currentRowRealId < rowNumber) {
-            unit = column[currentRowId]
-
-            // return null : no unit at this position
-            if (!unit) {
-                currentRowRealId = rowNumber
-            }
-            else {
-                currentRowRealId += unit.size
-                currentRowId++
-            }
-        }
-
-        return unit ? unit : null
-    }
-
     getUnitAt(columnNumber, rowNumber) {
         const column = this.grid[columnNumber]
 
@@ -351,7 +359,13 @@ module.exports = class Field extends Serializable {
         return new Unit(this.player.faction, type, color)
     }
 
-    resetPlayerMana() {
+    beginTurn() {
+        // evolve packs
+        this.evolvePacks()
+    }
+
+    endTurn() {
+        // reset mana
         this.player.resetMana()
     }
 
