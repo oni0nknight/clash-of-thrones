@@ -4,7 +4,7 @@ const server = require('http').Server(app)
 const io = require('socket.io').listen(server)
 
 const lifecycleHandler = require('./js/SocketHandlers/LifecycleHandler')
-const queriesHandler = require('./js/SocketHandlers/queriesHandler')
+const queriesHandler = require('./js/SocketHandlers/QueriesHandler')
 const gameHandler = require('./js/SocketHandlers/GameHandler')
 const playHandler = require('./js/SocketHandlers/PlayHandler')
 
