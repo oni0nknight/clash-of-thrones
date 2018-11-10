@@ -75,7 +75,7 @@ export default class Game {
             ui: null
         }
 
-        this.refresh = this.refresh.bind(this)
+        this.receiveState = this.receiveState.bind(this)
     }
 
     initialize(playerName, faction) {
@@ -133,7 +133,7 @@ export default class Game {
         this.gameObjects.ui = this.game.add.group()
 
         // subscibe to events
-        this.client.subscribe('gameState_push', this.refresh)
+        this.client.subscribe('gameState_push', this.receiveState)
 
         // init game state
         this.updateGameState()
@@ -144,7 +144,7 @@ export default class Game {
 
     destroy() {
         // unsubscribe to events
-        this.client.unsubscribe('gameState_push', this.refresh)
+        this.client.unsubscribe('gameState_push', this.receiveState)
 
         // warn the server
         this.client.call('leaveGame')
@@ -153,14 +153,19 @@ export default class Game {
         this.game.destroy()
     }
 
+    // Response handler
+    //============================================
+
+    receiveState(response) {
+        const gameState = response.gameState
+        this.refresh(gameState)
+    }
 
     // Helpers
     //============================================
 
     updateGameState() {
-        return this.client.query('gameState').then(gs => {
-            this.refresh(gs)
-        })
+        return this.client.query('gameState').then(this.receiveState)
     }
 
     displayUnit(fieldId, col, row, unit, options) {

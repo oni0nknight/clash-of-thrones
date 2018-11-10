@@ -11,25 +11,53 @@ const gameParams = {
     startUnitCount: 20
 }
 
-const bindSocket = (io, socket, players, games) => {
+module.exports = class PlayHandler {
+    constructor(io, socket, players, games) {
+        this.io = io
+        this.socket = socket
+        this.players = players
+        this.games = games
+    }
+
+    bindSockets() {
+        this.startGame = this.startGame.bind(this)
+        this.removeUnit = this.removeUnit.bind(this)
+        this.moveUnit = this.moveUnit.bind(this)
+        this.reinforce = this.reinforce.bind(this)
+        this.endTurn = this.endTurn.bind(this)
+        this.resetGame = this.resetGame.bind(this)
+
+        this.socket.on('startGame', this.startGame)
+        this.socket.on('removeUnit', this.removeUnit)
+        this.socket.on('moveUnit', this.moveUnit)
+        this.socket.on('reinforce', this.reinforce)
+        this.socket.on('endTurn', this.endTurn)
+
+        // Debug
+        this.socket.on('resetGame', this.resetGame)
+    }
+
     
-    socket.on('startGame', () => {
-        Logger.log(socket.id, 'requesting to start game')
-        const context = getReqContext(socket, players, games)
+    // Socket functions
+    //===================================
+
+    startGame() {
+        Logger.log(this.socket.id, 'requesting to start game')
+        const context = this.getReqContext()
         if (!context) {
             return
         }
         if (context.gameStarted) {
-            helpers.sendError(socket, '1101')
+            helpers.sendError(this.socket, '1101')
             return
         }
 
         // player must be host to perform this action
-        if (context.game.playerId === socket.id) {
-            Logger.log(socket.id, 'starting game')
+        if (context.game.playerId === this.socket.id) {
+            Logger.log(this.socket.id, 'starting game')
 
-            const hostPlayer = players[context.game.playerId]
-            const joinedPlayer = players[context.game.joinedPlayerId]
+            const hostPlayer = this.players[context.game.playerId]
+            const joinedPlayer = this.players[context.game.joinedPlayerId]
             const gameConfig = {
                 width: gameParams.width,
                 height: gameParams.height,
@@ -38,122 +66,118 @@ const bindSocket = (io, socket, players, games) => {
                 startUnitCount: gameParams.startUnitCount
             }
             context.game.gameInstance = new Game(gameConfig)
-            updateGameState(context.game, players)
+            this.updateGameState(context.game)
         } else {
-            helpers.sendError(socket, '1102')
+            helpers.sendError(this.socket, '1102')
         }
-    })
+    }
 
-    socket.on('removeUnit', ({uuid}) => {
-        Logger.log(socket.id, 'requesting to remove unit')
-        const context = getReqContext(socket, players, games)
+    removeUnit({ uuid }) {
+        Logger.log(this.socket.id, 'requesting to remove unit')
+        const context = this.getReqContext()
         if (!context) {
             return
         }
         if (!context.isMyTurn) {
-            helpers.sendError(socket, '1005')
+            helpers.sendError(this.socket, '1005')
             return
         }
         if (!context.gameStarted) {
-            helpers.sendError(socket, '1006')
+            helpers.sendError(this.socket, '1006')
             return
         }
-        Logger.log(socket.id, 'removing unit', uuid)
+        Logger.log(this.socket.id, 'removing unit', uuid)
 
-        const field = getField(socket, context.game, players)
+        const field = this.getField(context.game)
         const changes = field.removeUnit(uuid)
 
         if (!changes.length) {
-            Logger.warn(socket.id, 'this action isn\'t allowed')
+            Logger.warn(this.socket.id, 'this action isn\'t allowed')
         }
 
-        updateGameState(context.game, players)
-    })
+        this.updateGameState(context.game, changes)
+    }
 
-    socket.on('moveUnit', ({uuid, newColId}) => {
-        Logger.log(socket.id, 'requesting to move unit')
-        const context = getReqContext(socket, players, games)
+    moveUnit({ uuid, newColId }) {
+        Logger.log(this.socket.id, 'requesting to move unit')
+        const context = this.getReqContext()
         if (!context) {
             return
         }
         if (!context.isMyTurn) {
-            helpers.sendError(socket, '1005')
+            helpers.sendError(this.socket, '1005')
             return
         }
         if (!context.gameStarted) {
-            helpers.sendError(socket, '1006')
+            helpers.sendError(this.socket, '1006')
             return
         }
-        Logger.log(socket.id, 'moving unit', uuid)
+        Logger.log(this.socket.id, 'moving unit', uuid)
 
-        const field = getField(socket, context.game, players)
+        const field = this.getField(context.game)
         const changes = field.moveUnit(uuid, newColId)
 
         if (!changes.length) {
-            Logger.warn(socket.id, 'this action isn\'t allowed')
+            Logger.warn(this.socket.id, 'this action isn\'t allowed')
         }
 
-        updateGameState(context.game, players)
-    })
+        this.updateGameState(context.game, changes)
+    }
 
-    socket.on('reinforce', () => {
-        Logger.log(socket.id, 'requesting to reinforce')
-        const context = getReqContext(socket, players, games)
+    reinforce() {
+        Logger.log(this.socket.id, 'requesting to reinforce')
+        const context = this.getReqContext()
         if (!context) {
             return
         }
         if (!context.isMyTurn) {
-            helpers.sendError(socket, '1005')
+            helpers.sendError(this.socket, '1005')
             return
         }
         if (!context.gameStarted) {
-            helpers.sendError(socket, '1006')
+            helpers.sendError(this.socket, '1006')
             return
         }
-        Logger.log(socket.id, 'reinforcing')
+        Logger.log(this.socket.id, 'reinforcing')
 
-        const field = getField(socket, context.game, players)
+        const field = this.getField(context.game)
         const changes = field.reinforce()
 
-        updateGameState(context.game, players)
-    })
+        this.updateGameState(context.game, changes)
+    }
 
-    socket.on('endTurn', () => {
-        Logger.log(socket.id, 'requesting to end turn')
-        const context = getReqContext(socket, players, games)
+    endTurn() {
+        Logger.log(this.socket.id, 'requesting to end turn')
+        const context = this.getReqContext()
         if (!context) {
             return
         }
         if (!context.isMyTurn) {
-            helpers.sendError(socket, '1005')
+            helpers.sendError(this.socket, '1005')
             return
         }
         if (!context.gameStarted) {
-            helpers.sendError(socket, '1006')
+            helpers.sendError(this.socket, '1006')
             return
         }
-        Logger.log(socket.id, 'ending turn')
+        Logger.log(this.socket.id, 'ending turn')
 
         const changes = context.game.gameInstance.changeTurn()
 
-        updateGameState(context.game, players)
-    })
+        this.updateGameState(context.game, changes)
+    }
 
-
-    // DEBUG COMMANDS
-    //=======================================
-
-    socket.on('resetGame', () => {
-        Logger.log(socket.id, 'requesting to reset game')
-        const context = getReqContext(socket, players, games)
+    resetGame() {
+        Logger.log(this.socket.id, 'requesting to reset game')
+        const context = this.getReqContext()
         if (!context) {
             return
         }
-        Logger.log(socket.id, 'reseting game')
+        Logger.log(this.socket.id, 'reseting game')
         
         // re-initialize game
-        const hostPlayer = players[context.game.playerId]
-        const joinedPlayer = players[context.game.joinedPlayerId]
+        const hostPlayer = this.players[context.game.playerId]
+        const joinedPlayer = this.players[context.game.joinedPlayerId]
         const gameConfig = {
             width: gameParams.width,
             height: gameParams.height,
@@ -162,74 +186,75 @@ const bindSocket = (io, socket, players, games) => {
             startUnitCount: gameParams.startUnitCount
         }
         context.game.gameInstance = new Game(gameConfig)
-        updateGameState(context.game, players)
-    })
-}
-
-/**
- * Returns the request context if the request is valid, null otherwise. It also displays server logs if there are errors
- * @param {socket} socket
- * @param {Object.<string, PlayerObj>} players all players
- * @param {Array.<GameObj>} games array of all games
- * @returns {object} the context
- */
-const getReqContext = (socket, players, games) => {
-    // check if player exists
-    if (!players[socket.id]) {
-        helpers.sendError(socket, '0001')
-        return null
+        this.updateGameState(context.game)
     }
 
-    const game = games.find(g => g.id === players[socket.id].gameId)
 
-    // check if player is in a game
-    if (!game) {
-        helpers.sendError(socket, '1003')
-        return null
+    // Helpers
+    //===================================
+
+    /**
+     * Returns the request context if the request is valid, null otherwise. It also displays server logs if there are errors
+     * @returns {object} the context
+     */
+    getReqContext() {
+        // check if player exists
+        if (!this.players[this.socket.id]) {
+            helpers.sendError(this.socket, '0001')
+            return null
+        }
+    
+        const game = this.games.find(g => g.id === this.players[this.socket.id].gameId)
+    
+        // check if player is in a game
+        if (!game) {
+            helpers.sendError(this.socket, '1003')
+            return null
+        }
+    
+        // check if the game is complete
+        if (!game.playerId || !game.joinedPlayerId || !this.players[game.joinedPlayerId]) {
+            helpers.sendError(this.socket, '1004')
+            return null
+        }
+    
+        const gameStarted = !!game.gameInstance
+        let isMyTurn = false
+        if (gameStarted) {
+            isMyTurn = (
+                (game.gameInstance.turn === 'field1' && this.socket.id === game.playerId) ||
+                (game.gameInstance.turn === 'field2' && this.socket.id === game.joinedPlayerId)
+            )
+        }
+    
+        return { game, gameStarted, isMyTurn }
     }
 
-    // check if the game is complete
-    if (!game.playerId || !game.joinedPlayerId || !players[game.joinedPlayerId]) {
-        helpers.sendError(socket, '1004')
-        return null
+    /**
+     * Generate a new up-to-date state for the given game, and push it to the 2 client players
+     * @param {GameObj} game the game for which we want to update the state
+     * @param {object} changes changes that lead to the new game state
+     */
+    updateGameState(game, changes = []) {
+        if (game && game.gameInstance) {
+            Logger.log('default', 'pushing new game state for the 2 players')
+            const gameState = game.gameInstance.serialize()
+    
+            // send the game state to the 2 players
+            this.players[game.playerId].socket.emit('gameState_push', { gameState, changes })
+            this.players[game.joinedPlayerId].socket.emit('gameState_push', { gameState, changes })
+        }
     }
 
-    const gameStarted = !!game.gameInstance
-    let isMyTurn = false
-    if (gameStarted) {
-        isMyTurn = (
-            (game.gameInstance.turn === 'field1' && socket.id === game.playerId) ||
-            (game.gameInstance.turn === 'field2' && socket.id === game.joinedPlayerId)
+    isHost(game) {
+        return (
+            this.players[this.socket.id].gameId === game.id &&
+            game.playerId === this.socket.id
         )
     }
 
-    return { game, gameStarted, isMyTurn }
-}
-
-/**
- * Generate a new up-to-date state for the given game, and push it to the 2 client players
- * @param {GameObj} game the game for which we want to update the state
- * @param {Object.<string, PlayerObj>} players all players
- */
-const updateGameState = (game, players) => {
-    if (game && game.gameInstance) {
-        Logger.log('default', 'pushing new game state for the 2 players')
-        const gameState = game.gameInstance.serialize()
-
-        // send the game state to the 2 players
-        players[game.playerId].socket.emit('gameState_push', gameState)
-        players[game.joinedPlayerId].socket.emit('gameState_push', gameState)
+    getField(game) {
+        return this.isHost(game) ? game.gameInstance.field1 : game.gameInstance.field2
     }
 }
 
-const isHost = (socket, game, players) => {
-    return players[socket.id].gameId === game.id && game.playerId === socket.id
-}
-
-const getField = (socket, game, players) => {
-    return isHost(socket, game, players) ? game.gameInstance.field1 : game.gameInstance.field2
-}
-
-module.exports = {
-    bindSocket
-}

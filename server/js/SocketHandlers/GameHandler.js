@@ -3,133 +3,148 @@
 const helpers = require('./Helpers')
 const Logger = require('../Logger/Logger')
 
-const bindSocket = (io, socket, players, games) => {
+module.exports = class GameHandler {
+    constructor(io, socket, players, games) {
+        this.io = io
+        this.socket = socket
+        this.players = players
+        this.games = games
+    }
 
-    socket.on('createGame', (gameName) => {
-        Logger.log(socket.id, 'requesting to create game ' + gameName)
-        const context = getReqContext(socket, players, games)
+    bindSockets() {
+        this.createGame = this.createGame.bind(this)
+        this.joinGame = this.joinGame.bind(this)
+        this.leaveGame = this.leaveGame.bind(this)
+
+        this.socket.on('createGame', this.createGame)
+        this.socket.on('joinGame', this.joinGame)
+        this.socket.on('leaveGame', this.leaveGame)
+    }
+
+
+    // Socket functions
+    //===================================
+
+    createGame(gameName){
+        Logger.log(this.socket.id, 'requesting to create game ' + gameName)
+        const context = this.getReqContext()
         if (!context) {
             return
         }
 
-        if (players[socket.id].gameId === null) {
-            Logger.log(socket.id, 'creating the game ' + gameName)
+        if (!this.hasGame()) {
+            Logger.log(this.socket.id, 'creating the game ' + gameName)
 
             // create the game
             const game = {
                 id: helpers.generateUUID(),
-                playerId: socket.id,
-                playerName: players[socket.id].name,
+                playerId: this.socket.id,
+                playerName: this.players[this.socket.id].name,
                 gameName,
                 joinedPlayerId: null,
                 gameInstance: null
             }
 
             // add it to games list
-            games.push(game)
+            this.games.push(game)
 
             // add a reference to it in player structure
-            players[socket.id].gameId = game.id
+            this.players[this.socket.id].gameId = game.id
 
             // notify all the players
-            io.emit('gameListUpdated')
+            this.io.emit('gameListUpdated')
 
             // validate the creation
-            socket.emit('gameCreated')
+            this.socket.emit('gameCreated')
         }
         else {
-            helpers.sendError(socket, '1001')
+            helpers.sendError(this.socket, '1001')
         }
-    })
+    }
 
-    socket.on('joinGame', (gameId) => {
-        Logger.log(socket.id, 'requesting to join game ' + gameId)
-        const context = getReqContext(socket, players, games)
+    joinGame(gameId) {
+        Logger.log(this.socket.id, 'requesting to join game ' + gameId)
+        const context = this.getReqContext()
         if (!context) {
             return
         }
 
-        const game = games.find(g => g.id === gameId)
-        if (game && !hasGame(socket, players) && game.playerId !== null && players[game.playerId])
+        const game = this.games.find(g => g.id === gameId)
+        if (game && !this.hasGame() && game.playerId !== null && this.players[game.playerId])
         {
-            Logger.log(socket.id, 'joining the game ' + gameId)
+            Logger.log(this.socket.id, 'joining the game ' + gameId)
 
             // join the game
-            game.joinedPlayerId = socket.id
-            players[socket.id].gameId = game.id
+            game.joinedPlayerId = this.socket.id
+            this.players[this.socket.id].gameId = game.id
             
             // notify both players that the game is ready
-            socket.emit('gameReady')
-            players[game.playerId].socket.emit('gameReady')
+            this.socket.emit('gameReady')
+            this.players[game.playerId].socket.emit('gameReady')
         }
         else {
-            helpers.sendError(socket, '1002')
+            helpers.sendError(this.socket, '1002')
         }
-    })
+    }
 
-    socket.on('leaveGame', () => {
-        Logger.log(socket.id, 'requesting to leave game')
-        const context = getReqContext(socket, players, games)
+    leaveGame() {
+        Logger.log(this.socket.id, 'requesting to leave game')
+        const context = this.getReqContext()
         if (!context) {
             return
         }
-        Logger.log(socket.id, 'leaving game')
+        Logger.log(this.socket.id, 'leaving game')
     
-        destroyGame(io, socket, players, games)
-    })
+        this.destroyGame()
+    }
 
-}
+    
+    // Helpers
+    //===================================
 
-
-const destroyGame = (io, socket, players, games) => {
-    const game = games.find(g => g.id === players[socket.id].gameId)
-
-    if (game) {
-        Logger.log(socket.id, 'destroying game ' + game.gameName)
-
-        // remove game from games list
-        games.splice(games.indexOf(game), 1)
-
-        // remove the reference in player structure & notify them
-        if (game.playerId !== null && players[game.playerId]) {
-            players[game.playerId].gameId = null
-            players[game.playerId].socket.emit('gameDestroyed')
+    /**
+     * Returns the request context if the request is valid, null otherwise. It also displays server logs if there are errors
+     * @returns {object} the context
+     */
+    getReqContext() {
+        // check if player exists
+        if (!this.players[this.socket.id]) {
+            helpers.sendError(this.socket, '0001')
+            return null
         }
-        if (game.joinedPlayerId !== null && players[game.joinedPlayerId]) {
-            players[game.joinedPlayerId].gameId = null
-            players[game.joinedPlayerId].socket.emit('gameDestroyed')
+    
+        return {}
+    }
+
+    hasGame() {
+        return this.players[this.socket.id].gameId !== null
+    }
+
+    destroyGame() {
+        const game = this.games.find(g => g.id === this.players[this.socket.id].gameId)
+    
+        if (game) {
+            Logger.log(this.socket.id, 'destroying game ' + game.gameName)
+    
+            // remove game from games list
+            this.games.splice(this.games.indexOf(game), 1)
+    
+            // remove the reference in player structure & notify them
+            if (game.playerId !== null && this.players[game.playerId]) {
+                this.players[game.playerId].gameId = null
+                this.players[game.playerId].socket.emit('gameDestroyed')
+            }
+            if (game.joinedPlayerId !== null && this.players[game.joinedPlayerId]) {
+                this.players[game.joinedPlayerId].gameId = null
+                this.players[game.joinedPlayerId].socket.emit('gameDestroyed')
+            }
+    
+            Logger.log(this.socket.id, 'new games list : ')
+            Logger.log(this.socket.id, this.games)
+    
+            // notify all the players
+            this.io.emit('gameListUpdated')
         }
-
-        Logger.log(socket.id, 'new games list : ')
-        Logger.log(socket.id, games)
-
-        // notify all the players
-        io.emit('gameListUpdated')
     }
 }
 
-/**
- * Returns the request context if the request is valid, null otherwise. It also displays server logs if there are errors
- * @param {socket} socket
- * @param {Object.<string, PlayerObj>} players all players
- * @param {Array.<GameObj>} games array of all games
- * @returns {object} the context
- */
-const getReqContext = (socket, players, games) => {
-    // check if player exists
-    if (!players[socket.id]) {
-        helpers.sendError(socket, '0001')
-        return null
-    }
-
-    return {}
-}
-
-const hasGame = (socket, players) => {
-    return players[socket.id].gameId !== null
-}
-
-module.exports = {
-    bindSocket,
-    destroyGame
-}

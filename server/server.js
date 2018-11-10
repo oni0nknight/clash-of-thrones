@@ -3,10 +3,10 @@ const app = express()
 const server = require('http').Server(app)
 const io = require('socket.io').listen(server)
 
-const lifecycleHandler = require('./js/SocketHandlers/LifecycleHandler')
-const queriesHandler = require('./js/SocketHandlers/QueriesHandler')
-const gameHandler = require('./js/SocketHandlers/GameHandler')
-const playHandler = require('./js/SocketHandlers/PlayHandler')
+const LifecycleHandler = require('./js/SocketHandlers/LifecycleHandler')
+const QueriesHandler = require('./js/SocketHandlers/QueriesHandler')
+const GameHandler = require('./js/SocketHandlers/GameHandler')
+const PlayHandler = require('./js/SocketHandlers/PlayHandler')
 
 const Logger = require('./js/Logger/Logger')
 
@@ -54,10 +54,25 @@ io.on('connection', socket =>
 {
     Logger.log(socket.id, 'new connection !')
 
-    lifecycleHandler.bindSocket(io, socket, players, games)
-    queriesHandler.bindSocket(io, socket, players, games)
-    gameHandler.bindSocket(io, socket, players, games)
-    playHandler.bindSocket(io, socket, players, games)
+    const lifecycleHandler = new LifecycleHandler(io, socket, players, games)
+    lifecycleHandler.bindSockets()
+
+    const queriesHandler = new QueriesHandler(io, socket, players, games)
+    queriesHandler.bindSockets()
+
+    const gameHandler = new GameHandler(io, socket, players, games)
+    gameHandler.bindSockets()
+
+    const playHandler = new PlayHandler(io, socket, players, games)
+    playHandler.bindSockets()
+    
+    // Disconnect
+    socket.on('disconnect', () => {
+        if (players[socket.id]) {
+            GameHandler.destroyGame()
+        }
+        delete players[socket.id]
+    })
 })
 
 server.listen(SERVER_PORT)
