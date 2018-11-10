@@ -69,7 +69,7 @@ io.on('connection', socket =>
     // Disconnect
     socket.on('disconnect', () => {
         if (players[socket.id]) {
-            GameHandler.destroyGame()
+            gameHandler.destroyGame()
         }
         delete players[socket.id]
     })
