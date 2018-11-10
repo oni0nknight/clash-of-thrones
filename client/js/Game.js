@@ -36,15 +36,31 @@ const ENNEMY_FIELD = {
 const UI = {
     END_TURN : {
         X : 82,
-        Y : 673
+        Y : 727
     },
     MANA : {
-        X : 277,
-        Y : 673
+        X : 274,
+        Y : 671
     },
     UNITS : {
-        X : 25,
-        Y : 673
+        X : 29,
+        Y : 671
+    },
+    HEALTH: {
+        X : 132,
+        Y : 671,
+        FRAME: {
+            W : 75,
+            H : 37
+        }
+    },
+    ENNEMY_HEALTH: {
+        X : 132,
+        Y : 10,
+        FRAME: {
+            W : 75,
+            H : 37
+        }
     }
 }
 
@@ -86,7 +102,7 @@ export default class Game {
             renderer: Phaser.AUTO,
             parent: 'game-container',
             width: 340,
-            height: 720,
+            height: 780,
             state: {
                 init: this.init.bind(this),
                 preload: this.preload.bind(this),
@@ -278,7 +294,34 @@ export default class Game {
         })
 
         // rebuild UI
+        this.buildUI(gameState)
+    }
+
+    buildUI(gameState) {
+        // remove all UI elements
         this.gameObjects.ui.removeAll(true)
+
+        // health texts
+        const healthStyle = { font: '30px Helvetica', fill: '#1a1a1a', boundsAlignH: 'center', boundsAlignV: 'middle' }
+        const otherField = this.fieldId === 'field1' ? 'field2' : 'field1'
+        const healthText = new Phaser.Text(this.game, 0, 0, gameState[this.fieldId].player.health, healthStyle)
+        const ennemyHealthText = new Phaser.Text(this.game, 0, 0, gameState[otherField].player.health, healthStyle)
+        healthText.setTextBounds(UI.HEALTH.X, UI.HEALTH.Y + 2, UI.HEALTH.FRAME.W, UI.HEALTH.FRAME.H)
+        ennemyHealthText.setTextBounds(UI.ENNEMY_HEALTH.X, UI.ENNEMY_HEALTH.Y + 2, UI.ENNEMY_HEALTH.FRAME.W, UI.ENNEMY_HEALTH.FRAME.H)
+        this.gameObjects.ui.add(healthText)
+        this.gameObjects.ui.add(ennemyHealthText)
+
+        // reinforcement counter frame
+        const unitsFrame = new Phaser.Button(this.game, UI.UNITS.X, UI.UNITS.Y, 'units', this.reinforce, this)
+        this.gameObjects.ui.add(unitsFrame)
+        // reinforcement counter text
+        const unitsStyle = { font: '30px Helvetica', fill: '#1a1a1a', boundsAlignH: 'center', boundsAlignV: 'middle' }
+        const unitsText = new Phaser.Text(this.game, 0, 0, gameState[this.fieldId].player.reinforcement, unitsStyle)
+        unitsText.setTextBounds(UI.UNITS.X, UI.UNITS.Y + 2, unitsFrame.width, unitsFrame.height)
+        this.gameObjects.ui.add(unitsText)
+
+        // specific UI when it is player's turn
+        const isMyTurn = (gameState.turn === this.fieldId)
         if (isMyTurn) {
             // end-of-turn button
             const button = new Phaser.Button(this.game, UI.END_TURN.X, UI.END_TURN.Y, 'endOfTurn', this.endTurn, this)
@@ -287,22 +330,11 @@ export default class Game {
             // mana counter frame
             const manaFrame = new Phaser.Image(this.game, UI.MANA.X, UI.MANA.Y, 'mana')
             this.gameObjects.ui.add(manaFrame)
-
             // mana counter text
             const manaStyle = { font: '30px Helvetica', fill: '#1a1a1a', boundsAlignH: 'center', boundsAlignV: 'middle' }
             const manaText = new Phaser.Text(this.game, 0, 0, gameState[this.fieldId].player.mana, manaStyle)
             manaText.setTextBounds(UI.MANA.X, UI.MANA.Y + 2, manaFrame.width, manaFrame.height)
             this.gameObjects.ui.add(manaText)
-
-            // reinforcement counter frame
-            const unitsFrame = new Phaser.Button(this.game, UI.UNITS.X, UI.UNITS.Y, 'units', this.reinforce, this)
-            this.gameObjects.ui.add(unitsFrame)
-
-            // reinforcement counter text
-            const unitsStyle = { font: '30px Helvetica', fill: '#1a1a1a', boundsAlignH: 'center', boundsAlignV: 'middle' }
-            const unitsText = new Phaser.Text(this.game, 0, 0, gameState[this.fieldId].player.reinforcement, unitsStyle)
-            unitsText.setTextBounds(UI.UNITS.X, UI.UNITS.Y + 2, unitsFrame.width, unitsFrame.height)
-            this.gameObjects.ui.add(unitsText)
         }
     }
 
