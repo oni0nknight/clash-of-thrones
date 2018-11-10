@@ -28,24 +28,30 @@ module.exports = class Game extends Serializable {
             faction: config.player2Faction,
             startUnitCount: config.startUnitCount
         }
-        this.field1 = new Field(this, field1Conf)
-        this.field2 = new Field(this, field2Conf)
+        this.field1 = new Field(field1Conf)
+        this.field2 = new Field(field2Conf)
+        this.field1.setEnnemyField(this.field2)
+        this.field2.setEnnemyField(this.field1)
 
         this.turn = 'field1' // field1 or field2 : indicates the field whose turn it is
     }
 
     changeTurn() {
         // end old turn
-        this[this.turn].endTurn()
+        const endTurnChanges = this[this.turn].endTurn()
 
         // change turn
         this.turn = this.turn === 'field1' ? 'field2' : 'field1'
 
         // begin new turn
-        this[this.turn].beginTurn()
+        const beginTurnChanges = this[this.turn].beginTurn()
 
         // return changes
-        const changes = [ new Change('turnChanged', {}) ]
+        const changes = [ 
+            new Change('turnChanged', {}),
+            ...endTurnChanges,
+            ...beginTurnChanges
+        ]
         return changes
     }
 

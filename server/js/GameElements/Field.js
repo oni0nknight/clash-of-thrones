@@ -24,10 +24,8 @@ module.exports = class Field extends Serializable {
      * @param {string} faction the player faction
      * @param {number} startUnitCount number of units to instanciate at initialization
      */
-    constructor(game, config) {
+    constructor(config) {
         super()
-
-        this.game = game // do not serialize this attribute
 
         const startUnitCount = config.startUnitCount ? config.startUnitCount : DEFAULT_CONF.START_UNIT_COUNT
         this.player = new Player(config.faction, startUnitCount)
@@ -40,11 +38,20 @@ module.exports = class Field extends Serializable {
             this.grid.push([])
         }
 
+        this.ennemyField = null
+
         // initialize grid
         this.reinforce()
 
         // reset mana
         this.player.resetMana()
+    }
+
+    // Getters & Setters
+    //=======================================
+
+    setEnnemyField(field) {
+        this.ennemyField = field
     }
 
     // State mutators
@@ -67,7 +74,7 @@ module.exports = class Field extends Serializable {
             unitInfos.column.splice(index, 1)
 
             // increment reinforcement
-            this.player.reinforcement += unitInfos.unit.packed ? 3 : 1
+            this.player.reinforcement += unitInfos.unit.packed ? STACK_NUMBER : 1
 
             // consume mana
             this.player.consumeMana()
@@ -180,6 +187,8 @@ module.exports = class Field extends Serializable {
     //=======================================
 
     evolvePacks() {
+        const changes = []
+
         // evolve all packs and perform attacks
         this.grid.forEach(column => {
             column.forEach(unit => {
@@ -189,11 +198,13 @@ module.exports = class Field extends Serializable {
 
                     // attack if necessary
                     if (unit.attackDelay <= 0) {
-                        this.attack(column, unit)
+                        changes.push(...this.attack(column, unit))
                     }
                 }
             })
         })
+
+        return changes
     }
 
     createPacks() {
@@ -305,11 +316,36 @@ module.exports = class Field extends Serializable {
     }
 
     attack(column, unit) {
-        // get other player's corresponding column ==> use this.game
+        const deletedUnits = []
 
-        // build the column scheme
+        // get other player's corresponding column
+        const colId = this.grid.indexOf(column)
+        const ennemyColumn = this.ennemyField.grid[colId]
 
         // attack
+        while(unit.strength > 0 && ennemyColumn.length) {
+            const unitStrength = unit.strength
+            unit.strength -= ennemyColumn[0].strength
+            ennemyColumn[0].strength -= unitStrength
+
+            if (ennemyColumn[0].strength <= 0) {
+                const deletedUnit = ennemyColumn.shift()
+                deletedUnits.push(deletedUnit.uuid)              
+            }
+        }
+
+        // deal ennemy damage if necessary
+        if (unit.strength > 0) {
+            this.ennemyField.player.takeDamage(unit.strength)
+        }
+
+        // remove unit
+        column.splice(column.indexOf(unit), 1)
+
+        // increment reinforcement
+        this.player.reinforcement += STACK_NUMBER
+
+        return [ new Change('attack', { attackerUUID: unit.uuid, deletedUnits}) ]
     }
 
     
@@ -361,12 +397,16 @@ module.exports = class Field extends Serializable {
 
     beginTurn() {
         // evolve packs
-        this.evolvePacks()
+        const changes = this.evolvePacks()
+
+        return changes
     }
 
     endTurn() {
         // reset mana
         this.player.resetMana()
+
+        return []
     }
 
 
