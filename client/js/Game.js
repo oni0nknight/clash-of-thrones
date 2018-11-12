@@ -87,7 +87,11 @@ export default class Game {
 
         this.gameObjects = {
             frame: null,
-            fields: [],
+            fields: {
+                field1: null,
+                field2: null
+            },
+            actions: null,
             ui: null
         }
 
@@ -146,6 +150,7 @@ export default class Game {
         this.gameObjects.fields.field1 = this.game.add.group()
         this.gameObjects.fields.field2 = this.game.add.group()
 
+        this.gameObjects.actions = this.game.add.group()
         this.gameObjects.ui = this.game.add.group()
 
         // subscibe to events
@@ -237,6 +242,15 @@ export default class Game {
         
         // add it to the right group
         this.gameObjects.fields[fieldId].add(sprite)
+
+        // packed unit strength
+        if (unit.packed || unit.type === 'wall') {
+            const strengthStyle = { font: '20px Helvetica', fill: '#e7d3d3', backgroundColor: '#454545', boundsAlignH: 'center', boundsAlignV: 'middle' }
+            const strengthText = new Phaser.Text(this.game, 0, 0, unit.strength, strengthStyle)
+            strengthText.setTextBounds(xpos, ypos + 2, SPRITE_SIZE, SPRITE_SIZE)
+            strengthText.alpha = 0.9
+            this.gameObjects.actions.add(strengthText)
+        }
     }
 
     removeUnit(sprite) {
@@ -260,6 +274,9 @@ export default class Game {
         const isMyTurn = (gameState.turn === this.fieldId)
         const hasMana = gameState[this.fieldId].player.mana > 0
         const fieldIds = ['field1', 'field2']
+
+        // clean action layer
+        this.gameObjects.actions.removeAll()
 
         // rebuild fields
         fieldIds.forEach(fieldId => {

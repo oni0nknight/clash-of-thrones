@@ -28,8 +28,8 @@ module.exports = class Game extends Serializable {
             faction: config.player2Faction,
             startUnitCount: config.startUnitCount
         }
-        this.field1 = new Field(field1Conf)
-        this.field2 = new Field(field2Conf)
+        this.field1 = new Field(this, field1Conf)
+        this.field2 = new Field(this, field2Conf)
         this.field1.setEnnemyField(this.field2)
         this.field2.setEnnemyField(this.field1)
 

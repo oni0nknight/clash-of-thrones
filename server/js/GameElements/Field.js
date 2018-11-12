@@ -24,8 +24,10 @@ module.exports = class Field extends Serializable {
      * @param {string} faction the player faction
      * @param {number} startUnitCount number of units to instanciate at initialization
      */
-    constructor(config) {
+    constructor(game, config) {
         super()
+
+        this.game = game
 
         const startUnitCount = config.startUnitCount ? config.startUnitCount : DEFAULT_CONF.START_UNIT_COUNT
         this.player = new Player(config.faction, startUnitCount)
@@ -330,7 +332,7 @@ module.exports = class Field extends Serializable {
 
             if (ennemyColumn[0].strength <= 0) {
                 const deletedUnit = ennemyColumn.shift()
-                deletedUnits.push(deletedUnit.uuid)              
+                deletedUnits.push(deletedUnit.uuid)
             }
         }
 
@@ -399,14 +401,26 @@ module.exports = class Field extends Serializable {
         // evolve packs
         const changes = this.evolvePacks()
 
+        // reset mana
+        this.player.resetMana()
+
         return changes
     }
 
     endTurn() {
-        // reset mana
-        this.player.resetMana()
+        const changes = []
 
-        return []
+        // wall abilities
+        this.grid.forEach(column => {
+            column.forEach(unit => {
+                if (unit instanceof Wall) {
+                    unit.executeAbility(this.game)
+                    changes.push('WallAbility', {uuid: unit.uuid})
+                }
+            })
+        })
+
+        return changes
     }
 
 
