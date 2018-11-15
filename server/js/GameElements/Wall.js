@@ -27,8 +27,8 @@ module.exports = class Wall extends Entity {
         this.wallAbility.execute(gameContext, this)
     }
 
-    incStrength() {
-        this.strength = Math.min(this.strength+1, MAX_STRENGTH)
+    incStrength(value) {
+        this.strength = Math.min(this.strength + value, MAX_STRENGTH)
     }
 
     serialize() {

@@ -328,7 +328,7 @@ module.exports = class Field extends Serializable {
 
             if (column[0] instanceof Wall) {
                 // evolve the existing wall
-                column[0].strength += wall.strength
+                column[0].incStrength(wall.strength)
 
                 // add the change
                 changes.push(new Change('WallEvolved', {uuid: column[0].uuid}))
@@ -473,7 +473,7 @@ module.exports = class Field extends Serializable {
                 }
             })
         })
-        
+
         // reset mana
         this.player.resetMana()
 
