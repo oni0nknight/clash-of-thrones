@@ -236,8 +236,12 @@ module.exports = class Field extends Serializable {
                         const packedUnit = this.instanciateUnit(baseUnit.type, baseUnit.color)
                         packedUnit.pack()
 
-                        // remove the old units & add the packed one in place
-                        column.splice(baseIndex, CONFIG.STACK_NUMBER, packedUnit)
+                        // remove the old units
+                        column.splice(baseIndex, CONFIG.STACK_NUMBER)
+
+                        // add the packed unit
+                        const newIndex = (column[0] && (column[0] instanceof Wall)) ? 1 : 0
+                        column.splice(newIndex, 0, packedUnit)
 
                         // bonus mana
                         this.player.mana++
@@ -313,15 +317,29 @@ module.exports = class Field extends Serializable {
         const changes = []
 
         units.forEach((unitToRemove, idx) => {
-            const columnOfUnitToRemove = this.grid[firstColId + idx]
-            const indexToRemove = columnOfUnitToRemove.indexOf(unitToRemove)
+            const column = this.grid[firstColId + idx]
+
+            // remove old unit
+            const indexToRemove = column.indexOf(unitToRemove)
+            column.splice(indexToRemove, 1)
+
+            // create a new wall
             const wall = new Wall(unitToRemove.faction)
 
-            // remove old unit and add the wall
-            columnOfUnitToRemove.splice(indexToRemove, 1, wall)
+            if (column[0] instanceof Wall) {
+                // evolve the existing wall
+                column[0].strength += wall.strength
 
-            // add the change
-            changes.push(new Change('WallFormed', {uuid: wall.uuid}))
+                // add the change
+                changes.push(new Change('WallEvolved', {uuid: column[0].uuid}))
+            }
+            else {
+                // add the wall
+                column.unshift(wall)
+
+                // add the change
+                changes.push(new Change('WallFormed', {uuid: wall.uuid}))
+            }
         })
 
         return changes
@@ -446,15 +464,6 @@ module.exports = class Field extends Serializable {
         // evolve packs
         const changes = this.evolvePacks()
 
-        // reset mana
-        this.player.resetMana()
-
-        return changes
-    }
-
-    endTurn() {
-        const changes = []
-
         // wall abilities
         this.grid.forEach(column => {
             column.forEach(unit => {
@@ -464,6 +473,15 @@ module.exports = class Field extends Serializable {
                 }
             })
         })
+        
+        // reset mana
+        this.player.resetMana()
+
+        return changes
+    }
+
+    endTurn() {
+        const changes = []
 
         return changes
     }

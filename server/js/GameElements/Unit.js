@@ -5,9 +5,14 @@ const DataHelper = require('../DataHelpers')
 const Logger = require('../Logger/Logger')
 
 const UNIT_SIZE = {
-    NORMAL: 1,
-    ELITE: 2,
-    PACKED: 3
+    NORMAL: {
+        IDLE: 1,
+        PACKED: 3
+    },
+    ELITE: {
+        IDLE: 2,
+        PACKED: 2
+    }
 }
 
 module.exports = class Unit extends Entity {
@@ -31,12 +36,10 @@ module.exports = class Unit extends Entity {
     }
 
     get size() {
-        if (this.packed) {
-            return UNIT_SIZE.PACKED
-        } else if (this.type === 'normal') {
-            return UNIT_SIZE.NORMAL
+        if (this.type === 'normal') {
+            return this.packed ? UNIT_SIZE.NORMAL.PACKED : UNIT_SIZE.NORMAL.IDLE
         } else if (this.type === 'elite') {
-            return UNIT_SIZE.ELITE
+            return this.packed ? UNIT_SIZE.ELITE.PACKED : UNIT_SIZE.ELITE.IDLE
         } else {
             Logger.error('Unit.size :: unknown type unit')
             return -1
@@ -46,6 +49,7 @@ module.exports = class Unit extends Entity {
     pack() {
         this.strength = this.unitInfos.packedBaseStrength
         this.packed = true
+        this.movable = false
     }
 
     evolve() {

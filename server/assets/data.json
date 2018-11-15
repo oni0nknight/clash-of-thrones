@@ -12,7 +12,7 @@
                 "elite": {
                     "idleStrength": 2,
                     "packedBaseStrength": 4,
-                    "attackDelay": 2,
+                    "attackDelay": 3,
                     "strengthGain": 2
                 },
                 "colors": [
@@ -33,7 +33,7 @@
     "walls" : [
         {
             "name": "regenerate",
-            "wallBaseStrength": 3,
+            "wallBaseStrength": 2,
             "source": "wall.strength=Math.min(wall.strength+1,10)"
         }
     ]

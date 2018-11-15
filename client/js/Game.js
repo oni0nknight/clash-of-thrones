@@ -64,7 +64,7 @@ const UI = {
     }
 }
 
-const colorFrame = {
+const unitColorFrame = {
     green: 0,
     red: 1,
     blue: 2,
@@ -73,7 +73,7 @@ const colorFrame = {
     purple: 5
 }
 
-const growFrame = {
+const wallStepFrame = {
     low: 0,
     middle: 1,
     high: 2
@@ -142,7 +142,7 @@ export default class Game {
         this.game.load.spritesheet('targaryens-elite', _targaryensElite, SPRITE_SIZE, SPRITE_SIZE * 2)
         this.game.load.spritesheet('targaryens-wall', _targaryensWall, SPRITE_SIZE, SPRITE_SIZE)
         this.game.load.spritesheet('targaryens-normal-packed', _targaryensNormalPacked, SPRITE_SIZE, SPRITE_SIZE * 3)
-        this.game.load.spritesheet('targaryens-elite-packed', _targaryensElitePacked, SPRITE_SIZE, SPRITE_SIZE * 3)
+        this.game.load.spritesheet('targaryens-elite-packed', _targaryensElitePacked, SPRITE_SIZE, SPRITE_SIZE * 2)
 
         // UI
         this.game.load.image('endOfTurn', _endOfTurn)
@@ -198,7 +198,7 @@ export default class Game {
     displayUnit(fieldId, col, row, unit, options) {
         // find spritesheet
         const spritesheet = this.faction + '-' + unit.type + (unit.packed ? '-packed' : '')
-        const spriteFrame = unit.type === 'wall' ? growFrame[unit.grow] : colorFrame[unit.color]
+        const spriteFrame = unit.type === 'wall' ? wallStepFrame[unit.step] : unitColorFrame[unit.color]
 
         // compute position
         const xpos = FIELD.X + col * SPRITE_SIZE
