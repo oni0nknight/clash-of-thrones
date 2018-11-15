@@ -18,7 +18,7 @@ module.exports = class Unit extends Entity {
      * @param {string} color the color of the unit
      */
     constructor(faction, type = 'normal', color) {
-        const unitInfos = DataHelper.getUnitInfos(faction, type)
+        const unitInfos = DataHelper.getUnitsStats(faction, type)[type]
         
         super(unitInfos.idleStrength, faction, color, true)
 

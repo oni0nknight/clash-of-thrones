@@ -7,29 +7,12 @@ const Change = require('./Change')
 module.exports = class Game extends Serializable {
     /**
      * @constructor
-     * @param {number} width
-     * @param {number} height
-     * @param {string} player1Faction
-     * @param {string} player2Faction
-     * @param {number} startUnitCount
      */
     constructor(config) {
         super()
 
-        const field1Conf = {
-            width: config.width,
-            height: config.height,
-            faction: config.player1Faction,
-            startUnitCount: config.startUnitCount
-        }
-        const field2Conf = {
-            width: config.width,
-            height: config.height,
-            faction: config.player2Faction,
-            startUnitCount: config.startUnitCount
-        }
-        this.field1 = new Field(this, field1Conf)
-        this.field2 = new Field(this, field2Conf)
+        this.field1 = new Field(this, config.faction1)
+        this.field2 = new Field(this, config.faction2)
         this.field1.setEnnemyField(this.field2)
         this.field2.setEnnemyField(this.field1)
 

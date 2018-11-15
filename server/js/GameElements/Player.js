@@ -11,29 +11,28 @@ module.exports = class Player extends Serializable {
     /**
      * @constructor
      * @param {string} faction
-     * @param {number} startUnitCount number of units to instanciate at initialization
      */
-    constructor(faction, startUnitCount) {
+    constructor(faction) {
         super()
-        const playerStats = DataHelper.getPlayerStats(faction)
+        const factionStats = DataHelper.getFactionStats(faction)
+        const unitsStats = DataHelper.getUnitsStats(faction)
 
         this.faction = faction
-        this.reinforcement = startUnitCount
-        
-        this.health = playerStats.health
 
+        this.reinforcement = factionStats.totalUnits - factionStats.startingUnits
+        this.health = factionStats.health
         this.mana = DEFAULT_CONF.MANA
 
-        this.playerStats = playerStats // store the player stats for runtime access. Should not be streamed
-        this.factionInfos = DataHelper.getFactionInfos(faction) // store the faction infos for runtime access. Should not be streamed
+        this.factionStats = factionStats // store the player stats for runtime access. Should not be streamed
+        this.unitStats = unitsStats // store the units stats for runtime access. Should not be streamed
     }
 
     get nbEliteAllowed() {
-        return this.playerStats.eliteCount
+        return this.factionStats.eliteCount
     }
 
     get factionColors() {
-        return this.factionInfos.colors
+        return this.unitStats.colors
     }
 
     // Mana

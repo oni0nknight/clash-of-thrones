@@ -5,12 +5,6 @@ const Logger = require('../Logger/Logger')
 
 const Game = require('../GameElements/Game')
 
-const gameParams = {
-    width: 7,
-    height: 7,
-    startUnitCount: 20
-}
-
 module.exports = class PlayHandler {
     constructor(io, socket, players, games) {
         this.io = io
@@ -59,11 +53,8 @@ module.exports = class PlayHandler {
             const hostPlayer = this.players[context.game.playerId]
             const joinedPlayer = this.players[context.game.joinedPlayerId]
             const gameConfig = {
-                width: gameParams.width,
-                height: gameParams.height,
-                player1Faction: hostPlayer.faction,
-                player2Faction: joinedPlayer.faction,
-                startUnitCount: gameParams.startUnitCount
+                faction1: hostPlayer.faction,
+                faction2: joinedPlayer.faction
             }
             context.game.gameInstance = new Game(gameConfig)
             this.updateGameState(context.game)
@@ -179,11 +170,8 @@ module.exports = class PlayHandler {
         const hostPlayer = this.players[context.game.playerId]
         const joinedPlayer = this.players[context.game.joinedPlayerId]
         const gameConfig = {
-            width: gameParams.width,
-            height: gameParams.height,
-            player1Faction: hostPlayer.faction,
-            player2Faction: joinedPlayer.faction,
-            startUnitCount: gameParams.startUnitCount
+            faction1: hostPlayer.faction,
+            faction2: joinedPlayer.faction
         }
         context.game.gameInstance = new Game(gameConfig)
         this.updateGameState(context.game)

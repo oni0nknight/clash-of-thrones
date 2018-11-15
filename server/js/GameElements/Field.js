@@ -8,45 +8,32 @@ const Change = require('./Change')
 
 const EliteProbability = 0.3
 
-const STACK_NUMBER = 3
-
-const DEFAULT_CONF = {
-    WIDTH: 7,
-    HEIGHT: 7,
-    START_UNIT_COUNT : 20
+const CONFIG = {
+    WIDTH: 8,
+    HEIGHT: 6,
+    STACK_NUMBER: 3
 }
 
 module.exports = class Field extends Serializable {
     /**
      * @constructor
-     * @param {number} width number of columns
-     * @param {number} height number of rows
-     * @param {string} faction the player faction
-     * @param {number} startUnitCount number of units to instanciate at initialization
      */
-    constructor(game, config) {
+    constructor(game, faction) {
         super()
 
         this.game = game
 
-        const startUnitCount = config.startUnitCount ? config.startUnitCount : DEFAULT_CONF.START_UNIT_COUNT
-        this.player = new Player(config.faction, startUnitCount)
-
-        this.width = config.width ? config.width : DEFAULT_CONF.WIDTH
-        this.height = config.height ? config.height : DEFAULT_CONF.HEIGHT
+        this.player = new Player(faction)
 
         this.grid = []
-        for (let i = 0; i < this.width; ++i) {
+        for (let i = 0; i < CONFIG.WIDTH; ++i) {
             this.grid.push([])
         }
 
         this.ennemyField = null
 
         // initialize grid
-        this.reinforce()
-
-        // reset mana
-        this.player.resetMana()
+        this.initUnits()
     }
 
     // Getters & Setters
@@ -76,7 +63,7 @@ module.exports = class Field extends Serializable {
             unitInfos.column.splice(index, 1)
 
             // increment reinforcement
-            this.player.reinforcement += unitInfos.unit.packed ? STACK_NUMBER : 1
+            this.player.reinforcement += unitInfos.unit.packed ? CONFIG.STACK_NUMBER : 1
 
             // consume mana
             this.player.consumeMana()
@@ -101,7 +88,7 @@ module.exports = class Field extends Serializable {
         }
 
         const unitInfos = this.getUnitInfos(uuid)
-        if (unitInfos.unit && unitInfos.column && newColumnNumber >= 0 && newColumnNumber < this.width) {
+        if (unitInfos.unit && unitInfos.column && newColumnNumber >= 0 && newColumnNumber < CONFIG.WIDTH) {
             // check if movement is allowed
             const unitInLastPos = unitInfos.column.indexOf(unitInfos.unit) === unitInfos.column.length - 1
             const newColumnHasSpace = unitInfos.unit.size <= this.getFreeSpace(newColumnNumber)
@@ -135,10 +122,12 @@ module.exports = class Field extends Serializable {
     reinforce() {
         const changes = []
 
-        // mana management
-        if (!this.player.hasMana()) {
+        // early out
+        if (!this.player.hasMana() || this.player.reinforcement === 0) {
             return changes
         }
+
+        // consume mana
         this.player.consumeMana()
 
         let fieldFull = false
@@ -242,13 +231,16 @@ module.exports = class Field extends Serializable {
                     const similarUnits = endIndex - baseIndex + 1
 
                     // if stack is found
-                    if (similarUnits >= STACK_NUMBER) {
+                    if (similarUnits >= CONFIG.STACK_NUMBER) {
                         // create a packed unit
                         const packedUnit = this.instanciateUnit(baseUnit.type, baseUnit.color)
                         packedUnit.pack()
 
                         // remove the old units & add the packed one in place
-                        column.splice(baseIndex, STACK_NUMBER, packedUnit)
+                        column.splice(baseIndex, CONFIG.STACK_NUMBER, packedUnit)
+
+                        // bonus mana
+                        this.player.mana++
 
                         // add the change
                         changes.push(new Change('attackPackFormed', {uuid: packedUnit.uuid}))
@@ -271,13 +263,13 @@ module.exports = class Field extends Serializable {
         const changes = []
 
         // iterate on each row
-        for (let rowId = 0; rowId < this.height; rowId++) {
+        for (let rowId = 0; rowId < CONFIG.HEIGHT; rowId++) {
             let similarUnits = []
-
+            
             // iterate on each column
-            for (let colId = 0; colId < this.width; colId++) {
+            for (let colId = 0; colId < CONFIG.WIDTH; colId++) {
                 const unit = this.getUnitAt(colId, rowId)
-
+                
                 // update similar units stack
                 if (unit && unit.type === 'normal') {
                     const isUnitSimilar = similarUnits.length ? unit.color === similarUnits[0].color : true
@@ -285,34 +277,52 @@ module.exports = class Field extends Serializable {
                         similarUnits.push(unit)
                     }
                     else {
+                        // if stack is found, transform all idle units into walls
+                        if (similarUnits.length >= CONFIG.STACK_NUMBER) {
+                            const firstColumnId = colId - similarUnits.length
+                            this.transformToWall(similarUnits, firstColumnId)
+                        }
+
+                        // reinit similarUnits
                         similarUnits = [ unit ]
                     }
                 }
                 else {
-                    similarUnits = []
-                }
-
-                // if stack is found
-                if (similarUnits.length >= STACK_NUMBER) {
-                    // transform all idle units into walls
-                    for (let i = 0; i < STACK_NUMBER; i++) {
-                        const unitToRemove = similarUnits[STACK_NUMBER - 1 - i]
-                        const columnOfUnitToRemove = this.grid[colId - i]
-                        const indexToRemove = columnOfUnitToRemove.indexOf(unitToRemove)
-                        const wall = new Wall(unitToRemove.faction, unitToRemove.color)
-
-                        // remove old unit and add the wall
-                        columnOfUnitToRemove.splice(indexToRemove, 1, wall)
-
-                        // add the change
-                        changes.push(new Change('WallFormed', {uuid: wall.uuid}))
+                    // if stack is found, transform all idle units into walls
+                    if (similarUnits.length >= CONFIG.STACK_NUMBER) {
+                        const firstColumnId = colId - similarUnits.length
+                        this.transformToWall(similarUnits, firstColumnId)
                     }
 
                     // reinit similarUnits
                     similarUnits = []
                 }
             }
+
+            // if stack is found, transform all idle units into walls
+            if (similarUnits.length >= CONFIG.STACK_NUMBER) {
+                const firstColumnId = CONFIG.WIDTH - similarUnits.length
+                this.transformToWall(similarUnits, firstColumnId)
+            }
         }
+
+        return changes
+    }
+
+    transformToWall(units, firstColId) {
+        const changes = []
+
+        units.forEach((unitToRemove, idx) => {
+            const columnOfUnitToRemove = this.grid[firstColId + idx]
+            const indexToRemove = columnOfUnitToRemove.indexOf(unitToRemove)
+            const wall = new Wall(unitToRemove.faction, unitToRemove.color)
+
+            // remove old unit and add the wall
+            columnOfUnitToRemove.splice(indexToRemove, 1, wall)
+
+            // add the change
+            changes.push(new Change('WallFormed', {uuid: wall.uuid}))
+        })
 
         return changes
     }
@@ -345,7 +355,7 @@ module.exports = class Field extends Serializable {
         column.splice(column.indexOf(unit), 1)
 
         // increment reinforcement
-        this.player.reinforcement += STACK_NUMBER
+        this.player.reinforcement += CONFIG.STACK_NUMBER
 
         return [ new Change('attack', { attackerUUID: unit.uuid, deletedUnits}) ]
     }
@@ -354,6 +364,41 @@ module.exports = class Field extends Serializable {
     // Helpers
     //=======================================
     
+    initUnits() {
+        for (let i = 0; i < this.player.factionStats.startingUnits; i++) {
+            // create unit
+            const elitesOnGrid = this.grid.reduce((acc1, column) => {
+                return acc1 + column.reduce((acc2, unit) => {
+                    return acc2 + (unit.type === 'elite' ? 1 : 0)
+                }, 0)
+            }, 0)
+            const nbEliteAllowed = this.player.nbEliteAllowed
+            const eliteProba = (nbEliteAllowed - elitesOnGrid) / nbEliteAllowed * EliteProbability
+            const unitType = (Math.random() < eliteProba) ? 'elite' : 'normal'
+            const unitColor = this.player.factionColors[Math.floor(Math.random() * this.player.factionColors.length)]
+            const unit = this.instanciateUnit(unitType, unitColor)
+
+            // determine unit location
+            const possibleColumns = this.grid.filter((column, index) => {
+                return unit.size <= this.getFreeSpace(index)
+            })
+
+            if (possibleColumns.length > 0) {
+                // pick random column
+                const column = possibleColumns[Math.floor(Math.random() * possibleColumns.length)]
+                
+                // put the unit in column
+                column.push(unit)
+            }
+            else {
+                break
+            }
+        }
+
+        // create packs
+        this.createPacks()
+    }
+
     getUnitInfos(uuid) {
         const unitInfos = {
             unit: null,
@@ -388,7 +433,7 @@ module.exports = class Field extends Serializable {
     }
 
     getFreeSpace(columnNumber) {
-        return this.height - this.grid[columnNumber].reduce((acc, unit) => {
+        return CONFIG.HEIGHT - this.grid[columnNumber].reduce((acc, unit) => {
             return acc + unit.size
         }, 0)
     }
@@ -430,8 +475,6 @@ module.exports = class Field extends Serializable {
     serialize() {
         return {
             player: this.player.serialize(),
-            width: this.width,
-            height: this.height,
             grid: this.grid.map(col => col.map(unit => unit.serialize()))
         }
     }

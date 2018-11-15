@@ -23,40 +23,40 @@ const GHOST_ALPHA = 0.2
 
 const FIELD = {
     X : 30,
-    Y : 379,
-    WIDTH : 7,
-    HEIGHT : 7
+    Y : 339,
+    WIDTH : 8,
+    HEIGHT : 6
 }
 FIELD.RECT = new Phaser.Rectangle(FIELD.X, FIELD.Y, FIELD.WIDTH * SPRITE_SIZE, FIELD.HEIGHT * SPRITE_SIZE)
 
 const ENNEMY_FIELD = {
-    Y : 299
+    Y : 259
 }
 
 const UI = {
     END_TURN : {
-        X : 82,
-        Y : 727
+        X : 319,
+        Y : 589
     },
     MANA : {
-        X : 274,
-        Y : 671
+        X : 109,
+        Y : 589
     },
     UNITS : {
-        X : 29,
-        Y : 671
+        X : 271,
+        Y : 589
     },
     HEALTH: {
-        X : 132,
-        Y : 671,
+        X : 24,
+        Y : 589,
         FRAME: {
             W : 75,
             H : 37
         }
     },
     ENNEMY_HEALTH: {
-        X : 132,
-        Y : 10,
+        X : 281,
+        Y : 12,
         FRAME: {
             W : 75,
             H : 37
@@ -105,8 +105,8 @@ export default class Game {
         const config = {
             renderer: Phaser.AUTO,
             parent: 'game-container',
-            width: 340,
-            height: 780,
+            width: 380,
+            height: 680,
             state: {
                 init: this.init.bind(this),
                 preload: this.preload.bind(this),

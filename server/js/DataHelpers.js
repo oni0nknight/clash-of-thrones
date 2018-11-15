@@ -8,27 +8,10 @@ module.exports = {
         return data.factions.some(f => f.id === factionId)
     },
 
-    getFactionInfos(factionId) {
-        const faction = data.factions.find(f => f.id === factionId)
-        let factionInfos = null
-        if (faction) {
-            factionInfos = {
-                colors: faction.colors.slice(),
-                wall: faction.wall
-            }
-        }
-        return factionInfos
-    },
-
-    getUnitInfos(factionId, unitType) {
-        const faction = data.factions.find(f => f.id === factionId)
-        return faction && faction.units[unitType] ? faction.units[unitType] : null
-    },
-
     getWallInfos(factionId) {
         const faction = data.factions.find(f => f.id === factionId)
         if (faction) {
-            const wallInfos = data.walls.find(w => w.name === faction.wall)
+            const wallInfos = data.walls.find(w => w.name === faction.stats.wall)
             return wallInfos ? wallInfos : null
         }
         else {
@@ -36,8 +19,13 @@ module.exports = {
         }
     },
 
-    getPlayerStats(factionId) {
+    getFactionStats(factionId) {
         const faction = data.factions.find(f => f.id === factionId)
-        return faction ? faction.playerStats : null
+        return faction ? faction.stats : null
+    },
+
+    getUnitsStats(factionId) {
+        const faction = data.factions.find(f => f.id === factionId)
+        return faction ? faction.units : null
     }
 }

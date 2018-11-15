@@ -14,16 +14,18 @@
                     "packedBaseStrength": 4,
                     "attackDelay": 2,
                     "strengthGain": 2
-                }
+                },
+                "colors": [
+                    "green", "blue", "yellow"
+                ]
             },
-            "wall": "regenerate",
-            "colors": [
-                "green", "red", "blue", "yellow", "white", "purple"
-            ],
-            "playerStats": {
+            "stats": {
                 "health": 12,
                 "allowedMoves": 3,
-                "eliteCount": 7
+                "eliteCount": 4,
+                "startingUnits": 8,
+                "totalUnits": 18,
+                "wall": "regenerate"
             }
         }
     ],
