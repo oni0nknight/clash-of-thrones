@@ -28,7 +28,7 @@ module.exports = class Player extends Serializable {
     }
 
     get nbEliteAllowed() {
-        return this.factionStats.eliteCount
+        return this.factionStats.totalElites
     }
 
     get factionColors() {

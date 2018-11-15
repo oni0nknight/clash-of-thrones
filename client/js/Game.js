@@ -64,13 +64,19 @@ const UI = {
     }
 }
 
-const spriteFrames = {
+const colorFrame = {
     green: 0,
     red: 1,
     blue: 2,
     yellow: 3,
     white: 4,
     purple: 5
+}
+
+const growFrame = {
+    low: 0,
+    middle: 1,
+    high: 2
 }
 
 export default class Game {
@@ -192,6 +198,7 @@ export default class Game {
     displayUnit(fieldId, col, row, unit, options) {
         // find spritesheet
         const spritesheet = this.faction + '-' + unit.type + (unit.packed ? '-packed' : '')
+        const spriteFrame = unit.type === 'wall' ? growFrame[unit.grow] : colorFrame[unit.color]
 
         // compute position
         const xpos = FIELD.X + col * SPRITE_SIZE
@@ -206,7 +213,7 @@ export default class Game {
         }
 
         // instanciate sprite
-        const sprite = new Phaser.Sprite(this.game, xpos, ypos, spritesheet, spriteFrames[unit.color])
+        const sprite = new Phaser.Sprite(this.game, xpos, ypos, spritesheet, spriteFrame)
         sprite.name = unit.uuid
         sprite.unit = unit
 
@@ -233,7 +240,7 @@ export default class Game {
             sprite.input.boundsRect = FIELD.RECT
 
             // create ghost sprite
-            const ghostSprite = new Phaser.Sprite(this.game, xpos, ypos, spritesheet, spriteFrames[unit.color])
+            const ghostSprite = new Phaser.Sprite(this.game, xpos, ypos, spritesheet, spriteFrame)
             ghostSprite.name = unit.uuid + '_ghost'
             ghostSprite.alpha = GHOST_ALPHA
             sprite.ghost = ghostSprite

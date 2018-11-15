@@ -10,12 +10,14 @@ module.exports = class Wall extends Entity {
      * @param {string} faction the faction ID
      * @param {string} color the color
      */
-    constructor(faction, color) {
+    constructor(faction) {
         const wallInfos = DataHelper.getWallInfos(faction)
 
-        super(wallInfos.wallBaseStrength, faction, color, false)
+        super(wallInfos.wallBaseStrength, faction, false)
 
         this.type = 'wall'
+        this.grow = 'low'
+
         this.wallAbility = new WallAbility(wallInfos.name, wallInfos.source)
 
         this.wallInfos = wallInfos // store the wallInfos for runtime access. Should not be streamed
@@ -29,6 +31,7 @@ module.exports = class Wall extends Entity {
         return {
             ...super.serialize(),
             type: this.type,
+            grow: this.grow,
             wallAbility: this.wallAbility.serialize()
         }
     }

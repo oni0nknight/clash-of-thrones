@@ -6,7 +6,7 @@ const Player = require('./Player')
 const Serializable = require('./Serializable')
 const Change = require('./Change')
 
-const EliteProbability = 0.3
+const EliteProbability = 0.1
 
 const CONFIG = {
     WIDTH: 8,
@@ -218,14 +218,14 @@ module.exports = class Field extends Serializable {
                 for (let baseIndex = 0; baseIndex < columnLength; baseIndex++) {
                     const baseUnit = column[baseIndex]
 
-                    // forbid to stack packs
-                    if (baseUnit.packed) {
+                    // forbid to stack packs & to pack with walls
+                    if (baseUnit.packed || baseUnit.type === 'wall') {
                         continue
                     }
 
                     // compute the number of similar units
                     let endIndex = baseIndex
-                    while (column[endIndex+1] && column[endIndex+1].color === baseUnit.color && column[endIndex+1].type === 'normal' && !column[endIndex+1].packed) {
+                    while (column[endIndex+1] && column[endIndex+1].type === 'normal' && column[endIndex+1].color === baseUnit.color && !column[endIndex+1].packed) {
                         endIndex++
                     }
                     const similarUnits = endIndex - baseIndex + 1
@@ -315,7 +315,7 @@ module.exports = class Field extends Serializable {
         units.forEach((unitToRemove, idx) => {
             const columnOfUnitToRemove = this.grid[firstColId + idx]
             const indexToRemove = columnOfUnitToRemove.indexOf(unitToRemove)
-            const wall = new Wall(unitToRemove.faction, unitToRemove.color)
+            const wall = new Wall(unitToRemove.faction)
 
             // remove old unit and add the wall
             columnOfUnitToRemove.splice(indexToRemove, 1, wall)

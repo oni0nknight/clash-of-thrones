@@ -22,9 +22,9 @@
             "stats": {
                 "health": 12,
                 "allowedMoves": 3,
-                "eliteCount": 4,
                 "startingUnits": 8,
                 "totalUnits": 18,
+                "totalElites": 4,
                 "wall": "regenerate"
             }
         }
