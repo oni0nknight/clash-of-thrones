@@ -73,12 +73,6 @@ const unitColorFrame = {
     purple: 5
 }
 
-const wallStepFrame = {
-    low: 0,
-    middle: 1,
-    high: 2
-}
-
 export default class Game {
     constructor(client, isHost) {
         this.game = null
@@ -198,7 +192,7 @@ export default class Game {
     displayUnit(fieldId, col, row, unit, options) {
         // find spritesheet
         const spritesheet = this.faction + '-' + unit.type + (unit.packed ? '-packed' : '')
-        const spriteFrame = unit.type === 'wall' ? wallStepFrame[unit.step] : unitColorFrame[unit.color]
+        const spriteFrame = unit.type === 'wall' ? unit.strength-1 : unitColorFrame[unit.color]
 
         // compute position
         const xpos = FIELD.X + col * SPRITE_SIZE
@@ -251,7 +245,7 @@ export default class Game {
         this.gameObjects.fields[fieldId].add(sprite)
 
         // packed unit strength
-        if (unit.packed || unit.type === 'wall') {
+        if (unit.packed) {
             const strengthStyle = { font: '20px Helvetica', fill: '#e7d3d3', backgroundColor: '#454545', boundsAlignH: 'center', boundsAlignV: 'middle' }
             const strengthText = new Phaser.Text(this.game, 0, 0, unit.strength, strengthStyle)
             strengthText.setTextBounds(xpos, ypos + 2, SPRITE_SIZE, SPRITE_SIZE)

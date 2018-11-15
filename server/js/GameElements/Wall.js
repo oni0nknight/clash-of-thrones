@@ -4,10 +4,8 @@ const Entity = require('./Entity')
 const WallAbility = require('./WallAbility')
 const DataHelper = require('../DataHelpers')
 
-const STEP_THRESHOLDS = {
-    LOW: 3,
-    MIDDLE: 6
-}
+const MAX_STRENGTH = 5
+
 module.exports = class Wall extends Entity {
     /**
      * @constructor
@@ -25,27 +23,18 @@ module.exports = class Wall extends Entity {
         this.wallInfos = wallInfos // store the wallInfos for runtime access. Should not be streamed
     }
 
-    get step() {
-        if (this.strength <= STEP_THRESHOLDS.LOW) {
-            return 'low'
-        }
-        else if (this.strength <= STEP_THRESHOLDS.MIDDLE) {
-            return 'middle'
-        }
-        else {
-            return 'high'
-        }
-    }
-
     executeAbility(gameContext) {
         this.wallAbility.execute(gameContext, this)
+    }
+
+    incStrength() {
+        this.strength = Math.min(this.strength+1, MAX_STRENGTH)
     }
 
     serialize() {
         return {
             ...super.serialize(),
             type: this.type,
-            step: this.step,
             wallAbility: this.wallAbility.serialize()
         }
     }

@@ -34,7 +34,7 @@
         {
             "name": "regenerate",
             "wallBaseStrength": 2,
-            "source": "wall.strength=Math.min(wall.strength+1,10)"
+            "source": "wall.incStrength()"
         }
     ]
 }
