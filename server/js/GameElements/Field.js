@@ -72,7 +72,7 @@ module.exports = class Field extends Serializable {
             changes.push( new Change('unitRemoved', {uuid}) )
 
             // create packs
-            const packChanges = this.createPacks()
+            const packChanges = this.createPacks(true)
             changes.push(...packChanges)
         }
         
@@ -111,7 +111,7 @@ module.exports = class Field extends Serializable {
                 changes.push( new Change('unitMoved', {uuid}) )
 
                 // create packs
-                const packChanges = this.createPacks()
+                const packChanges = this.createPacks(false)
                 changes.push(...packChanges)
             }
         }
@@ -167,8 +167,8 @@ module.exports = class Field extends Serializable {
             }
         }
 
-        // create packs
-        const packChanges = this.createPacks()
+        // create packs (TODO : should not create packs automatically)
+        const packChanges = this.createPacks(false)
 
         return changes.concat(packChanges)
     }
@@ -198,14 +198,14 @@ module.exports = class Field extends Serializable {
         return changes
     }
 
-    createPacks() {
+    createPacks(gainMana) {
         const changes = []
-        changes.push(...this.createAttackPacks())
-        changes.push(...this.createDefensePacks())
+        changes.push(...this.createAttackPacks(gainMana))
+        changes.push(...this.createDefensePacks(gainMana))
         return changes
     }
 
-    createAttackPacks() {
+    createAttackPacks(gainMana) {
         const changes = []
 
         // iterate on each column
@@ -243,8 +243,10 @@ module.exports = class Field extends Serializable {
                         const newIndex = (column[0] && (column[0] instanceof Wall)) ? 1 : 0
                         column.splice(newIndex, 0, packedUnit)
 
-                        // bonus mana
-                        this.player.mana++
+                        // mana bonus
+                        if (gainMana) {
+                            this.player.mana++
+                        }
 
                         // add the change
                         changes.push(new Change('attackPackFormed', {uuid: packedUnit.uuid}))
@@ -263,84 +265,105 @@ module.exports = class Field extends Serializable {
         return changes
     }
 
-    createDefensePacks() {
+    createDefensePacks(gainMana) {
         const changes = []
+        let checkResult = []
+        let wallCreated = false
 
-        // iterate on each row
-        for (let rowId = 0; rowId < CONFIG.HEIGHT; rowId++) {
-            let similarUnits = []
-            
-            // iterate on each column
-            for (let colId = 0; colId < CONFIG.WIDTH; colId++) {
-                const unit = this.getUnitAt(colId, rowId)
+        do {
+            wallCreated = false
+
+            // iterate on each row
+            for (let rowId = 0; rowId < CONFIG.HEIGHT && !wallCreated; rowId++) {
+                let similarUnits = []
                 
-                // update similar units stack
-                if (unit && unit.type === 'normal') {
-                    const isUnitSimilar = similarUnits.length ? unit.color === similarUnits[0].color : true
-                    if (isUnitSimilar) {
-                        similarUnits.push(unit)
+                // iterate on each column
+                for (let colId = 0; colId < CONFIG.WIDTH && !wallCreated; colId++) {
+                    const unit = this.getUnitAt(colId, rowId)
+                    
+                    // update similar units stack
+                    if (unit && unit.type === 'normal') {
+                        const isUnitSimilar = similarUnits.length ? unit.color === similarUnits[0].color : true
+                        if (isUnitSimilar) {
+                            console.log('>>> pushing ' + unit.color + ' (' + unit.size + ')')
+                            similarUnits.push(unit)
+                        }
+                        else {
+                            // check for walls
+                            checkResult = this.checkForWalls(similarUnits, colId - similarUnits.length, gainMana)
+                            if (checkResult.length) {
+                                wallCreated = true
+                            }
+
+                            // reinit similarUnits
+                            console.log('>>> reinit (was ' + similarUnits.length + ') & add ' + unit.color + ' (' + unit.size + ')')
+                            similarUnits = [ unit ]
+                        }
                     }
                     else {
-                        // if stack is found, transform all idle units into walls
-                        if (similarUnits.length >= CONFIG.STACK_NUMBER) {
-                            const firstColumnId = colId - similarUnits.length
-                            this.transformToWall(similarUnits, firstColumnId)
+                        // check for walls
+                        checkResult = this.checkForWalls(similarUnits, colId - similarUnits.length, gainMana)
+                        if (checkResult.length) {
+                            wallCreated = true
                         }
 
                         // reinit similarUnits
-                        similarUnits = [ unit ]
+                        console.log('>>> reinit (was ' + similarUnits.length + ')')
+                        similarUnits = []
                     }
                 }
-                else {
-                    // if stack is found, transform all idle units into walls
-                    if (similarUnits.length >= CONFIG.STACK_NUMBER) {
-                        const firstColumnId = colId - similarUnits.length
-                        this.transformToWall(similarUnits, firstColumnId)
-                    }
 
-                    // reinit similarUnits
-                    similarUnits = []
+                // check for walls
+                checkResult = this.checkForWalls(similarUnits, CONFIG.WIDTH - similarUnits.length, gainMana)
+                if (checkResult.length) {
+                    wallCreated = true
                 }
             }
 
-            // if stack is found, transform all idle units into walls
-            if (similarUnits.length >= CONFIG.STACK_NUMBER) {
-                const firstColumnId = CONFIG.WIDTH - similarUnits.length
-                this.transformToWall(similarUnits, firstColumnId)
+            if (wallCreated) {
+                console.log('REDOING...')
             }
-        }
+        } while (wallCreated)
 
         return changes
     }
 
-    transformToWall(units, firstColId) {
+    checkForWalls(similarUnits, firstColumnId, gainMana) {
         const changes = []
 
-        units.forEach((unitToRemove, idx) => {
-            const column = this.grid[firstColId + idx]
+        if (similarUnits.length >= CONFIG.STACK_NUMBER) {
+            // if stack is found, transform all idle units into walls
+            similarUnits.forEach((unitToRemove, idx) => {
+                const column = this.grid[firstColumnId + idx]
+    
+                // remove old unit
+                const indexToRemove = column.indexOf(unitToRemove)
+                column.splice(indexToRemove, 1)
+    
+                // create a new wall
+                const wall = new Wall(unitToRemove.faction)
+    
+                if (column[0] instanceof Wall) {
+                    // evolve the existing wall
+                    column[0].incStrength(wall.strength)
+    
+                    // add the change
+                    changes.push(new Change('WallEvolved', {uuid: column[0].uuid}))
+                }
+                else {
+                    // add the wall
+                    column.unshift(wall)
+    
+                    // add the change
+                    changes.push(new Change('WallFormed', {uuid: wall.uuid}))
+                }
+            })
 
-            // remove old unit
-            const indexToRemove = column.indexOf(unitToRemove)
-            column.splice(indexToRemove, 1)
-
-            // create a new wall
-            const wall = new Wall(unitToRemove.faction)
-
-            if (column[0] instanceof Wall) {
-                // evolve the existing wall
-                column[0].incStrength(wall.strength)
-
-                // add the change
-                changes.push(new Change('WallEvolved', {uuid: column[0].uuid}))
+            // mana bonus
+            if (gainMana) {
+                this.player.mana++
             }
-            else {
-                // add the wall
-                column.unshift(wall)
-
-                // add the change
-                changes.push(new Change('WallFormed', {uuid: wall.uuid}))
-            }
-        })
+        }
 
         return changes
     }
@@ -413,8 +436,8 @@ module.exports = class Field extends Serializable {
             }
         }
 
-        // create packs
-        this.createPacks()
+        // create packs (TODO : should not create packs automatically)
+        this.createPacks(false)
     }
 
     getUnitInfos(uuid) {
