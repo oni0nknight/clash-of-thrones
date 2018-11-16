@@ -56,15 +56,9 @@ module.exports = class Field extends Serializable {
 
         const unitInfos = this.getUnitInfos(uuid)
         if (unitInfos.unit && unitInfos.column) {
-            // find unit's index in column
-            const index = unitInfos.column.indexOf(unitInfos.unit)
-
             // remove the unit
-            unitInfos.column.splice(index, 1)
-
-            // increment reinforcement
-            this.player.reinforcement += unitInfos.unit.packed ? CONFIG.STACK_NUMBER : 1
-
+            this.transferUnitBack(unitInfos.unit, unitInfos.column)
+            
             // consume mana
             this.player.consumeMana()
 
@@ -346,6 +340,9 @@ module.exports = class Field extends Serializable {
                 if (column[0] instanceof Wall) {
                     // evolve the existing wall
                     column[0].incStrength(wall.strength)
+
+                    // increment reinforcement as the unit has been removed
+                    this.player.reinforcement++
     
                     // add the change
                     changes.push(new Change('WallEvolved', {uuid: column[0].uuid}))
@@ -382,8 +379,11 @@ module.exports = class Field extends Serializable {
             ennemyColumn[0].strength -= unitStrength
 
             if (ennemyColumn[0].strength <= 0) {
-                const deletedUnit = ennemyColumn.shift()
-                deletedUnits.push(deletedUnit.uuid)
+                // delete the ennemy unit
+                const unitToDelete = ennemyColumn[0]
+                this.ennemyField.transferUnitBack(unitToDelete, ennemyColumn)
+
+                deletedUnits.push(unitToDelete.uuid)
             }
         }
 
@@ -393,10 +393,7 @@ module.exports = class Field extends Serializable {
         }
 
         // remove unit
-        column.splice(column.indexOf(unit), 1)
-
-        // increment reinforcement
-        this.player.reinforcement += CONFIG.STACK_NUMBER
+        this.transferUnitBack(unit, column)
 
         return [ new Change('attack', { attackerUUID: unit.uuid, deletedUnits}) ]
     }
@@ -481,6 +478,19 @@ module.exports = class Field extends Serializable {
 
     instanciateUnit(type, color) {
         return new Unit(this.player.faction, type, color)
+    }
+
+    transferUnitBack(unit, column) {
+        // find unit's index in column
+        const index = column.indexOf(unit)
+
+        if (index !== -1) {
+            // remove the unit
+            column.splice(index, 1)
+
+            // increment reinforcement
+            this.player.reinforcement += unit.packed ? CONFIG.STACK_NUMBER : 1
+        }
     }
 
     beginTurn() {
