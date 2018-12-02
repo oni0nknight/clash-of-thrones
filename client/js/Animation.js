@@ -4,6 +4,7 @@ import Logger from './Logger'
 import { GAME } from './Constants'
 
 const Animations = {
+    // An unit is removed
     unitRemoved: {
         duration: 800,
         computeNextState: (currentState, change) => {
@@ -14,6 +15,8 @@ const Animations = {
             Logger.log(`Animating ${change.type}`)
         }
     },
+
+    // An unit is moved
     unitMoved: {
         duration: 0,
         computeNextState: (currentState, change) => {
@@ -24,6 +27,8 @@ const Animations = {
             Logger.log(`Animating ${change.type}`)
         }
     },
+
+    // An unit is added to the field
     unitAdded: {
         duration: 800,
         computeNextState: (currentState, change) => {
@@ -34,6 +39,8 @@ const Animations = {
             Logger.log(`Animating ${change.type}`)
         }
     },
+
+    // An unit attack pack is created
     attackPackFormed: {
         duration: 800,
         computeNextState: (currentState, change) => {
@@ -44,6 +51,8 @@ const Animations = {
             Logger.log(`Animating ${change.type}`)
         }
     },
+
+    // A wall is created
     wallFormed: {
         duration: 800,
         computeNextState: (currentState, change) => {
@@ -54,6 +63,8 @@ const Animations = {
             Logger.log(`Animating ${change.type}`)
         }
     },
+
+    // A wall evolves (merges with another one)
     wallEvolved: {
         duration: 800,
         computeNextState: (currentState, change) => {
@@ -64,6 +75,8 @@ const Animations = {
             Logger.log(`Animating ${change.type}`)
         }
     },
+
+    // A wall executes its ability
     wallAbility: {
         duration: 500,
         computeNextState: (currentState, change) => {
@@ -74,6 +87,8 @@ const Animations = {
             Logger.log(`Animating ${change.type}`)
         }
     },
+
+    // A packed unit performs an attack
     attack: {
         duration: 1200,
         computeNextState: (currentState, change) => {
@@ -84,6 +99,8 @@ const Animations = {
             Logger.log(`Animating ${change.type}`)
         }
     },
+
+    // The turn changes
     turnChanged: {
         duration: 1200,
         computeNextState: (currentState, change) => {
@@ -134,5 +151,3 @@ export function Animate(currentState, concurrentChanges, context) {
         setTimeout(() => resolve(newState), duration)
     })
 }
-
-export default { Animate }

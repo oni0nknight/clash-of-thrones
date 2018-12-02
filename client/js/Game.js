@@ -18,7 +18,7 @@ import _mana from '../assets/UI/manaFrame.png'
 import _units from '../assets/UI/unitsFrame.png'
 
 // Helpers
-import Animation from './Animation'
+import { Animate } from './Animation'
 import Logger from './Logger'
 import {
     GAME,
@@ -151,7 +151,7 @@ export default class Game {
         // build the promise chain
         changes.reduce((promChain, concurrentChanges) => {
             return promChain.then((currState) => {
-                return Animation.Animate(currState, concurrentChanges, context).then(nextState => {
+                return Animate(currState, concurrentChanges, context).then(nextState => {
                     Logger.log('refreshing state')
                     this.refresh(nextState, false)
                     return nextState
