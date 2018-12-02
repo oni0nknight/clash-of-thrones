@@ -30,8 +30,8 @@ module.exports = class Game extends Serializable {
         const beginTurnChanges = this[this.turn].beginTurn()
 
         // return changes
-        const changes = [ 
-            new Change('turnChanged', {}),
+        const changes = [
+            [ new Change('turnChanged', {}) ],
             ...endTurnChanges,
             ...beginTurnChanges
         ]

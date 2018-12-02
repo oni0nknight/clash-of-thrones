@@ -14,6 +14,10 @@ const CONFIG = {
     STACK_NUMBER: 3
 }
 
+/**
+ * @typedef {Change[]} ConcurrentChanges
+ */
+
 module.exports = class Field extends Serializable {
     /**
      * @constructor
@@ -46,6 +50,52 @@ module.exports = class Field extends Serializable {
     // State mutators
     //=======================================
 
+    /**
+     * Performs all actions related to the beginning of a turn
+     * @returns {ConcurrentChanges[]} An array of concurrent changes
+     */
+    beginTurn() {
+        const changes = []
+
+        // execute wall abilities
+        const wallChanges = []
+        this.grid.forEach(column => {
+            column.forEach(unit => {
+                if (unit instanceof Wall) {
+                    unit.executeAbility(this.game)
+                    wallChanges.push( new Change('wallAbility', {uuid: unit.uuid}) )
+                }
+            })
+        })
+        if (wallChanges.length > 0) {
+            changes.push(wallChanges)
+        }
+
+        // evolve attack packs
+        const evolveChanges = this.evolvePacks()
+        changes.push(...evolveChanges)
+
+        // reset mana
+        this.player.resetMana()
+
+        return changes
+    }
+
+    /**
+     * Performs all actions related to the end of a turn
+     * @returns {ConcurrentChanges[]} An array of concurrent changes
+     */
+    endTurn() {
+        const changes = []
+
+        return changes
+    }
+
+    /**
+     * Removes the given unit from the field
+     * @param {number} uuid the uuid of the unit to remove
+     * @returns {ConcurrentChanges[]} An array of concurrent changes
+     */
     removeUnit(uuid) {
         const changes = []
 
@@ -63,7 +113,7 @@ module.exports = class Field extends Serializable {
             this.player.consumeMana()
 
             // add the change
-            changes.push( new Change('unitRemoved', {uuid}) )
+            changes.push( [ new Change('unitRemoved', {uuid}) ] )
 
             // create packs
             const packChanges = this.createPacks(true)
@@ -73,6 +123,12 @@ module.exports = class Field extends Serializable {
         return changes
     }
 
+    /**
+     * Moves the given unit at the end of the given column
+     * @param {string} uuid the uuid of the unit to move
+     * @param {number} newColumnNumber the new column index
+     * @returns {ConcurrentChanges[]} An array of concurrent changes
+     */
     moveUnit(uuid, newColumnNumber) {
         const changes = []
 
@@ -102,7 +158,7 @@ module.exports = class Field extends Serializable {
                 this.player.consumeMana()
 
                 // add the change
-                changes.push( new Change('unitMoved', {uuid}) )
+                changes.push( [ new Change('unitMoved', {uuid}) ] )
 
                 // create packs
                 const packChanges = this.createPacks(false)
@@ -113,8 +169,13 @@ module.exports = class Field extends Serializable {
         return changes
     }
 
+    /**
+     * Reinforce the field with new units
+     * @returns {ConcurrentChanges[]} An array of concurrent changes
+     */
     reinforce() {
         const changes = []
+        const addChanges = []
 
         // early out
         if (!this.player.hasMana() || this.player.reinforcement === 0) {
@@ -154,7 +215,7 @@ module.exports = class Field extends Serializable {
                 this.player.reinforcement--
 
                 // manage changes
-                changes.push(new Change('unitAdded', {uuid: unit.uuid}))
+                addChanges.push(new Change('unitAdded', {uuid: unit.uuid}))
             }
             else {
                 fieldFull = true
@@ -163,14 +224,19 @@ module.exports = class Field extends Serializable {
 
         // create packs (TODO : should not create packs automatically)
         const packChanges = this.createPacks(false)
+        changes.push(addChanges, ...packChanges)
 
-        return changes.concat(packChanges)
+        return changes
     }
 
 
     // Packs management
     //=======================================
 
+    /**
+     * Evolves all attack packs & launch attacks if necessary
+     * @returns {ConcurrentChanges[]} An array of concurrent changes (each of which contains 1 change : the attack infos)
+     */
     evolvePacks() {
         const changes = []
 
@@ -183,7 +249,8 @@ module.exports = class Field extends Serializable {
 
                     // attack if necessary
                     if (unit.attackDelay <= 0) {
-                        changes.push(...this.attack(column, unit))
+                        const attackChanges = this.attack(column, unit)
+                        changes.push(...attackChanges)
                     }
                 }
             })
@@ -192,13 +259,23 @@ module.exports = class Field extends Serializable {
         return changes
     }
 
+    /**
+     * Create all attack packs & all walls on the field
+     * @param {boolean} gainMana tells if mana should be gained in case of pack created
+     * @returns {ConcurrentChanges[]} An array of concurrent changes (each of which contains the changes related to the formed pack)
+     */
     createPacks(gainMana) {
         const changes = []
-        changes.push(...this.createAttackPacks(gainMana))
-        changes.push(...this.createDefensePacks(gainMana))
+        changes.push(...this.createDefensePacks(gainMana)) // create walls first...
+        changes.push(...this.createAttackPacks(gainMana)) // ...and then attack packs
         return changes
     }
 
+    /**
+     * Create all attack packs on the field
+     * @param {boolean} gainMana tells if mana should be gained in case of pack created
+     * @returns {ConcurrentChanges[]} An array of concurrent changes (each of which contains 1 change : the created attack pack)
+     */
     createAttackPacks(gainMana) {
         const changes = []
 
@@ -243,7 +320,7 @@ module.exports = class Field extends Serializable {
                         }
 
                         // add the change
-                        changes.push(new Change('attackPackFormed', {uuid: packedUnit.uuid}))
+                        changes.push( [ new Change('attackPackFormed', {uuid: packedUnit.uuid}) ] )
 
                         // need to check again the column
                         columnDone = false
@@ -259,9 +336,14 @@ module.exports = class Field extends Serializable {
         return changes
     }
 
+    /**
+     * Create all walls on the field
+     * @param {boolean} gainMana tells if mana should be gained in case of pack created
+     * @returns {ConcurrentChanges[]} An array of concurrent changes (each of which contains the list of created/evolved walls)
+     */
     createDefensePacks(gainMana) {
         const changes = []
-        let checkResult = []
+        let wallChanges = []
         let wallCreated = false
 
         do {
@@ -276,56 +358,58 @@ module.exports = class Field extends Serializable {
                     const unit = this.getUnitAt(colId, rowId)
                     
                     // update similar units stack
+
                     if (unit && unit.type === 'normal') {
                         const isUnitSimilar = similarUnits.length ? unit.color === similarUnits[0].color : true
                         if (isUnitSimilar) {
-                            console.log('>>> pushing ' + unit.color + ' (' + unit.size + ')')
                             similarUnits.push(unit)
                         }
                         else {
                             // check for walls
-                            checkResult = this.checkForWalls(similarUnits, colId - similarUnits.length, gainMana)
-                            if (checkResult.length) {
-                                wallCreated = true
-                            }
+                            wallChanges = this.checkForWalls(similarUnits, colId - similarUnits.length, gainMana)
+                            changes.push(...wallChanges)
+                            wallCreated = wallChanges.length > 0
 
                             // reinit similarUnits
-                            console.log('>>> reinit (was ' + similarUnits.length + ') & add ' + unit.color + ' (' + unit.size + ')')
                             similarUnits = [ unit ]
                         }
                     }
                     else {
                         // check for walls
-                        checkResult = this.checkForWalls(similarUnits, colId - similarUnits.length, gainMana)
-                        if (checkResult.length) {
-                            wallCreated = true
-                        }
+                        wallChanges = this.checkForWalls(similarUnits, colId - similarUnits.length, gainMana)
+                        changes.push(...wallChanges)
+                        wallCreated = wallChanges.length > 0
 
                         // reinit similarUnits
-                        console.log('>>> reinit (was ' + similarUnits.length + ')')
                         similarUnits = []
                     }
                 }
 
                 // check for walls
-                checkResult = this.checkForWalls(similarUnits, CONFIG.WIDTH - similarUnits.length, gainMana)
-                if (checkResult.length) {
-                    wallCreated = true
+                if (!wallCreated) {
+                    wallChanges = this.checkForWalls(similarUnits, CONFIG.WIDTH - similarUnits.length, gainMana)
+                    changes.push(...wallChanges)
+                    wallCreated = wallChanges.length > 0
                 }
-            }
-
-            if (wallCreated) {
-                console.log('REDOING...')
             }
         } while (wallCreated)
 
         return changes
     }
 
+    /**
+     * Checks if walls can be created out of the similarUnits array. If so, it creates them or evolves existing walls
+     * @param {Unit[]} similarUnits Array of similar units
+     * @param {number} firstColumnId the column of the 1st unit in the similarUnits array
+     * @param {boolean} gainMana tells if mana should be gained in case of pack created
+     * @returns {ConcurrentChanges[]} An array of 1 concurrent changes (which contains the list of created/evolved walls)
+     */
     checkForWalls(similarUnits, firstColumnId, gainMana) {
         const changes = []
 
         if (similarUnits.length >= CONFIG.STACK_NUMBER) {
+            const wallChanges = []
+
             // if stack is found, transform all idle units into walls
             similarUnits.forEach((unitToRemove, idx) => {
                 const column = this.grid[firstColumnId + idx]
@@ -345,16 +429,18 @@ module.exports = class Field extends Serializable {
                     this.player.reinforcement++
     
                     // add the change
-                    changes.push(new Change('WallEvolved', {uuid: column[0].uuid}))
+                    wallChanges.push(new Change('wallEvolved', {uuid: column[0].uuid}))
                 }
                 else {
                     // add the wall
                     column.unshift(wall)
     
                     // add the change
-                    changes.push(new Change('WallFormed', {uuid: wall.uuid}))
+                    wallChanges.push(new Change('wallFormed', {uuid: wall.uuid, oldUnit: unitToRemove.uuid}))
                 }
             })
+
+            changes.push(wallChanges)
 
             // mana bonus
             if (gainMana) {
@@ -365,6 +451,12 @@ module.exports = class Field extends Serializable {
         return changes
     }
 
+    /**
+     * Performs an attack with the given unit
+     * @param {Unit[]} column the column of the attack
+     * @param {Unit} unit the attacking unit
+     * @returns {ConcurrentChanges[]} An array of 1 concurrent changes (which contains 1 change : the attack infos)
+     */
     attack(column, unit) {
         const deletedUnits = []
 
@@ -395,7 +487,7 @@ module.exports = class Field extends Serializable {
         // remove unit
         this.transferUnitBack(unit, column)
 
-        return [ new Change('attack', { attackerUUID: unit.uuid, deletedUnits}) ]
+        return [ [ new Change('attack', { attackerUUID: unit.uuid, deletedUnits}) ] ]
     }
 
     
@@ -491,32 +583,6 @@ module.exports = class Field extends Serializable {
             // increment reinforcement
             this.player.reinforcement += unit.packed ? CONFIG.STACK_NUMBER : 1
         }
-    }
-
-    beginTurn() {
-        // evolve packs
-        const changes = this.evolvePacks()
-
-        // wall abilities
-        this.grid.forEach(column => {
-            column.forEach(unit => {
-                if (unit instanceof Wall) {
-                    unit.executeAbility(this.game)
-                    changes.push('WallAbility', {uuid: unit.uuid})
-                }
-            })
-        })
-
-        // reset mana
-        this.player.resetMana()
-
-        return changes
-    }
-
-    endTurn() {
-        const changes = []
-
-        return changes
     }
 
 

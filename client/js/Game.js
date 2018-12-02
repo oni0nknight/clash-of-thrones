@@ -17,61 +17,20 @@ import _endOfTurn from '../assets/UI/end_of_turn.png'
 import _mana from '../assets/UI/manaFrame.png'
 import _units from '../assets/UI/unitsFrame.png'
 
+// Helpers
+import Animation from './Animation'
+import Logger from './Logger'
+import {
+    GAME,
+    SPRITE_SIZE,
+    GHOST_ALPHA,
+    FIELD,
+    ENNEMY_FIELD,
+    UI,
+    UNIT_COLORS
+} from './Constants'
 
-const SPRITE_SIZE = 40
-const GHOST_ALPHA = 0.2
-
-const FIELD = {
-    X : 30,
-    Y : 339,
-    WIDTH : 8,
-    HEIGHT : 6
-}
-FIELD.RECT = new Phaser.Rectangle(FIELD.X, FIELD.Y, FIELD.WIDTH * SPRITE_SIZE, FIELD.HEIGHT * SPRITE_SIZE)
-
-const ENNEMY_FIELD = {
-    Y : 259
-}
-
-const UI = {
-    END_TURN : {
-        X : 319,
-        Y : 589
-    },
-    MANA : {
-        X : 109,
-        Y : 589
-    },
-    UNITS : {
-        X : 271,
-        Y : 589
-    },
-    HEALTH: {
-        X : 24,
-        Y : 589,
-        FRAME: {
-            W : 75,
-            H : 37
-        }
-    },
-    ENNEMY_HEALTH: {
-        X : 281,
-        Y : 12,
-        FRAME: {
-            W : 75,
-            H : 37
-        }
-    }
-}
-
-const unitColorFrame = {
-    green: 0,
-    red: 1,
-    blue: 2,
-    yellow: 3,
-    white: 4,
-    purple: 5
-}
+const FIELD_RECT = new Phaser.Rectangle(FIELD.X, FIELD.Y, FIELD.WIDTH * SPRITE_SIZE, FIELD.HEIGHT * SPRITE_SIZE)
 
 export default class Game {
     constructor(client, isHost) {
@@ -105,8 +64,8 @@ export default class Game {
         const config = {
             renderer: Phaser.AUTO,
             parent: 'game-container',
-            width: 380,
-            height: 680,
+            width: GAME.WIDTH,
+            height: GAME.HEIGHT,
             state: {
                 init: this.init.bind(this),
                 preload: this.preload.bind(this),
@@ -178,8 +137,31 @@ export default class Game {
     //============================================
 
     receiveState(response) {
-        const gameState = response.gameState
-        this.refresh(gameState)
+        const { changes, finalState } = response
+        const context = {
+            game: this.game,
+            gameObjects: this.gameObjects,
+            fieldId: this.fieldId
+        }
+        Logger.resetTimer()
+
+        // first refresh
+        this.refresh(this.lastGameState, false)
+
+        // build the promise chain
+        changes.reduce((promChain, concurrentChanges) => {
+            return promChain.then((currState) => {
+                return Animation.Animate(currState, concurrentChanges, context).then(nextState => {
+                    Logger.log('refreshing state')
+                    this.refresh(nextState, false)
+                    return nextState
+                })
+            })
+        }, Promise.resolve(this.lastGameState))
+        // display the final state
+        .then(() => {
+            this.refresh(finalState, true)
+        })
     }
 
     // Helpers
@@ -192,7 +174,7 @@ export default class Game {
     displayUnit(fieldId, col, row, unit, options) {
         // find spritesheet
         const spritesheet = this.faction + '-' + unit.type + (unit.packed ? '-packed' : '')
-        const spriteFrame = unit.type === 'wall' ? unit.strength-1 : unitColorFrame[unit.color]
+        const spriteFrame = unit.type === 'wall' ? unit.strength-1 : UNIT_COLORS[unit.color]
 
         // compute position
         const xpos = FIELD.X + col * SPRITE_SIZE
@@ -231,7 +213,7 @@ export default class Game {
             sprite.events.onDragStop.add(this.onDragStop, { context: this })
 
             // define bounds of drag
-            sprite.input.boundsRect = FIELD.RECT
+            sprite.input.boundsRect = FIELD_RECT
 
             // create ghost sprite
             const ghostSprite = new Phaser.Sprite(this.game, xpos, ypos, spritesheet, spriteFrame)
@@ -266,7 +248,7 @@ export default class Game {
     // Events
     //============================================
 
-    refresh(gameState) {
+    refresh(gameState, bindEvents) {
         if (!gameState) {
             return
         }
@@ -294,10 +276,10 @@ export default class Game {
                     currentRow = col[0].size - 1
                 }
                 col.forEach((unit, idx, units) => {
-                    
+                    const allowBind = bindEvents && isMyTurn && isMyUnit && hasMana
                     const options = {
-                        bindDelete: isMyTurn && isMyUnit && hasMana,
-                        bindDrag: isMyTurn && isMyUnit && hasMana && unit.movable && (idx === units.length - 1)
+                        bindDelete: allowBind,
+                        bindDrag: allowBind && unit.movable && (idx === units.length - 1)
                     }
                     this.displayUnit(fieldId, colId, currentRow, unit, options)
 
@@ -312,10 +294,12 @@ export default class Game {
         })
 
         // rebuild UI
-        this.buildUI(gameState)
+        this.buildUI(gameState, bindEvents)
     }
 
-    buildUI(gameState) {
+    buildUI(gameState, bindEvents) {
+        const isMyTurn = (gameState.turn === this.fieldId)
+
         // remove all UI elements
         this.gameObjects.ui.removeAll(true)
 
@@ -330,7 +314,7 @@ export default class Game {
         this.gameObjects.ui.add(ennemyHealthText)
 
         // reinforcement counter frame
-        const unitsFrame = new Phaser.Button(this.game, UI.UNITS.X, UI.UNITS.Y, 'units', this.reinforce, this)
+        const unitsFrame = isMyTurn && bindEvents ? new Phaser.Button(this.game, UI.UNITS.X, UI.UNITS.Y, 'units', this.reinforce, this) : new Phaser.Image(this.game, UI.UNITS.X, UI.UNITS.Y, 'units')
         this.gameObjects.ui.add(unitsFrame)
         // reinforcement counter text
         const unitsStyle = { font: '30px Helvetica', fill: '#1a1a1a', boundsAlignH: 'center', boundsAlignV: 'middle' }
@@ -339,10 +323,9 @@ export default class Game {
         this.gameObjects.ui.add(unitsText)
 
         // specific UI when it is player's turn
-        const isMyTurn = (gameState.turn === this.fieldId)
         if (isMyTurn) {
             // end-of-turn button
-            const button = new Phaser.Button(this.game, UI.END_TURN.X, UI.END_TURN.Y, 'endOfTurn', this.endTurn, this)
+            const button = bindEvents ? new Phaser.Button(this.game, UI.END_TURN.X, UI.END_TURN.Y, 'endOfTurn', this.endTurn, this) : new Phaser.Image(this.game, UI.END_TURN.X, UI.END_TURN.Y, 'endOfTurn')
             this.gameObjects.ui.add(button)
 
             // mana counter frame
@@ -416,7 +399,7 @@ export default class Game {
             }
             else {
                 // rebuild last state
-                this.context.refresh(this.context.lastGameState)
+                this.context.refresh(this.context.lastGameState, true)
             }
         }
     }

@@ -62,8 +62,8 @@ module.exports = class QueriesHandler {
         if (context.gameStarted) {
             Logger.log(this.socket.id, 'fetching game state')
 
-            const gameState = context.game.gameInstance.serialize()
-            this.socket.emit('gameState_response', { gameState, changes: [] })
+            const finalState = context.game.gameInstance.serialize()
+            this.socket.emit('gameState_response', { finalState, changes: [] })
         }
     }
 

@@ -226,11 +226,11 @@ module.exports = class PlayHandler {
     updateGameState(game, changes = []) {
         if (game && game.gameInstance) {
             Logger.log('default', 'pushing new game state for the 2 players')
-            const gameState = game.gameInstance.serialize()
+            const finalState = game.gameInstance.serialize()
     
             // send the game state to the 2 players
-            this.players[game.playerId].socket.emit('gameState_push', { gameState, changes })
-            this.players[game.joinedPlayerId].socket.emit('gameState_push', { gameState, changes })
+            this.players[game.playerId].socket.emit('gameState_push', { finalState, changes })
+            this.players[game.joinedPlayerId].socket.emit('gameState_push', { finalState, changes })
         }
     }
 
