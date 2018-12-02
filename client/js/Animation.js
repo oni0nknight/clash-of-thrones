@@ -64,8 +64,8 @@ const Animations = {
         }
     },
 
-    // A wall evolves (merges with another one)
-    wallEvolved: {
+    // Two walls are merged
+    wallMerged: {
         duration: 800,
         computeNextState: (currentState, change) => {
             // TODO

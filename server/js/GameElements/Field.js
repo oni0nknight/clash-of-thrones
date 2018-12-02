@@ -402,13 +402,14 @@ module.exports = class Field extends Serializable {
      * @param {Unit[]} similarUnits Array of similar units
      * @param {number} firstColumnId the column of the 1st unit in the similarUnits array
      * @param {boolean} gainMana tells if mana should be gained in case of pack created
-     * @returns {ConcurrentChanges[]} An array of 1 concurrent changes (which contains the list of created/evolved walls)
+     * @returns {ConcurrentChanges[]} An array of concurrent changes (which contains the list of created/evolved walls)
      */
     checkForWalls(similarUnits, firstColumnId, gainMana) {
         const changes = []
 
         if (similarUnits.length >= CONFIG.STACK_NUMBER) {
-            const wallChanges = []
+            const wallCreateChanges = []
+            const wallMergeChanges = []
 
             // if stack is found, transform all idle units into walls
             similarUnits.forEach((unitToRemove, idx) => {
@@ -429,18 +430,22 @@ module.exports = class Field extends Serializable {
                     this.player.reinforcement++
     
                     // add the change
-                    wallChanges.push(new Change('wallEvolved', {uuid: column[0].uuid}))
+                    wallCreateChanges.push(new Change('wallFormed', {uuid: wall.uuid, oldUnit: unitToRemove.uuid}))
+                    wallMergeChanges.push(new Change('wallMerged', {oldWall: column[0].uuid, newWall: wall.uuid}))
                 }
                 else {
                     // add the wall
                     column.unshift(wall)
     
                     // add the change
-                    wallChanges.push(new Change('wallFormed', {uuid: wall.uuid, oldUnit: unitToRemove.uuid}))
+                    wallCreateChanges.push(new Change('wallFormed', {uuid: wall.uuid, oldUnit: unitToRemove.uuid}))
                 }
             })
 
-            changes.push(wallChanges)
+            changes.push(wallCreateChanges)
+            if (wallMergeChanges.length > 0) {
+                changes.push(wallMergeChanges)
+            }
 
             // mana bonus
             if (gainMana) {
