@@ -8,7 +8,8 @@
     "prebuild-client": "rm -rf client/dist",
     "build-client": "parcel build client/*.html -d client/dist --no-source-maps",
     "prestart-client": "rm -rf client/dist",
-    "start-client": "parcel client/*.html -d client/dist"
+    "start-client": "parcel client/*.html -d client/dist",
+    "lint": "eslint server/ client/js/"
   },
   "author": "Theophile Gindre",
   "license": "ISC",

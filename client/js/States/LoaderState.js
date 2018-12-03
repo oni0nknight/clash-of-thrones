@@ -48,8 +48,6 @@ export default class LoaderState extends AppState {
     nextStep() {
         if (this.next) {
             this.switchToState(this.next, ...this.nextArgs)
-        } else {
-            console.error('LoaderState', '::', 'Unknown next state')
         }
     }
 }
