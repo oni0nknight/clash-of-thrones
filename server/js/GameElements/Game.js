@@ -11,12 +11,14 @@ module.exports = class Game extends Serializable {
     constructor(config) {
         super()
 
-        this.field1 = new Field(this, config.faction1)
-        this.field2 = new Field(this, config.faction2)
-        this.field1.setEnnemyField(this.field2)
-        this.field2.setEnnemyField(this.field1)
+        this.field1 = new Field(this, 'field1', config.faction1)
+        this.field2 = new Field(this, 'field2', config.faction2)
 
         this.turn = 'field1' // field1 or field2 : indicates the field whose turn it is
+    }
+
+    getEnnemyField(fieldId) {
+        return fieldId === 'field1' ? 'field2' : 'field1'
     }
 
     changeTurn() {
@@ -24,14 +26,17 @@ module.exports = class Game extends Serializable {
         const endTurnChanges = this[this.turn].endTurn()
 
         // change turn
-        this.turn = this.turn === 'field1' ? 'field2' : 'field1'
+        this.turn = this.getEnnemyField(this.turn)
+        const emptyChange = new Change('empty', {}, this.serialize()) // empty change to instant switch the turn
+        const turnChange = new Change('turnChanged', {}, this.serialize())
 
         // begin new turn
         const beginTurnChanges = this[this.turn].beginTurn()
 
         // return changes
         const changes = [
-            [ new Change('turnChanged', {}) ],
+            emptyChange,
+            turnChange,
             ...endTurnChanges,
             ...beginTurnChanges
         ]

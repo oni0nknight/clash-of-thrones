@@ -149,9 +149,9 @@ export default class Game {
         this.refresh(this.lastGameState, false)
 
         // build the promise chain
-        changes.reduce((promChain, concurrentChanges) => {
+        changes.reduce((promChain, change) => {
             return promChain.then((currState) => {
-                return Animate(currState, concurrentChanges, context).then(nextState => {
+                return Animate(currState, change, context).then(nextState => {
                     Logger.log('refreshing state')
                     this.refresh(nextState, false)
                     return nextState

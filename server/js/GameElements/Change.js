@@ -4,8 +4,9 @@ module.exports = class Change {
     /**
      * @constructor
      */
-    constructor(type, args) {
-        this.type = type
+    constructor(name, args, newState) {
+        this.name = name
         this.args = args
+        this.newState = newState
     }
 }

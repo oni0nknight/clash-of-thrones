@@ -14,18 +14,15 @@ const CONFIG = {
     STACK_NUMBER: 3
 }
 
-/**
- * @typedef {Change[]} ConcurrentChanges
- */
-
 module.exports = class Field extends Serializable {
     /**
      * @constructor
      */
-    constructor(game, faction) {
+    constructor(game, name, faction) {
         super()
 
         this.game = game
+        this.name = name
 
         this.player = new Player(faction)
 
@@ -34,41 +31,33 @@ module.exports = class Field extends Serializable {
             this.grid.push([])
         }
 
-        this.ennemyField = null
-
         // initialize grid
         this.initUnits()
     }
 
-    // Getters & Setters
-    //=======================================
-
-    setEnnemyField(field) {
-        this.ennemyField = field
-    }
 
     // State mutators
     //=======================================
 
     /**
      * Performs all actions related to the beginning of a turn
-     * @returns {ConcurrentChanges[]} An array of concurrent changes
+     * @returns {Changes[]} An array of changes
      */
     beginTurn() {
         const changes = []
 
         // execute wall abilities
-        const wallChanges = []
+        const wallIds = []
         this.grid.forEach(column => {
             column.forEach(unit => {
                 if (unit instanceof Wall) {
                     unit.executeAbility(this.game)
-                    wallChanges.push( new Change('wallAbility', {uuid: unit.uuid}) )
+                    wallIds.push(unit.uuid)
                 }
             })
         })
-        if (wallChanges.length > 0) {
-            changes.push(wallChanges)
+        if (wallIds.length > 0) {
+            changes.push(new Change('wallAbility', { walls: wallIds }, this.game.serialize()))
         }
 
         // evolve attack packs
@@ -83,7 +72,7 @@ module.exports = class Field extends Serializable {
 
     /**
      * Performs all actions related to the end of a turn
-     * @returns {ConcurrentChanges[]} An array of concurrent changes
+     * @returns {Changes[]} An array of changes
      */
     endTurn() {
         const changes = []
@@ -94,7 +83,7 @@ module.exports = class Field extends Serializable {
     /**
      * Removes the given unit from the field
      * @param {number} uuid the uuid of the unit to remove
-     * @returns {ConcurrentChanges[]} An array of concurrent changes
+     * @returns {Changes[]} An array of changes
      */
     removeUnit(uuid) {
         const changes = []
@@ -113,7 +102,7 @@ module.exports = class Field extends Serializable {
             this.player.consumeMana()
 
             // add the change
-            changes.push( [ new Change('unitRemoved', {uuid}) ] )
+            changes.push( new Change('unitRemoved', { uuid }, this.game.serialize()) )
 
             // create packs
             const packChanges = this.createPacks(true)
@@ -127,7 +116,7 @@ module.exports = class Field extends Serializable {
      * Moves the given unit at the end of the given column
      * @param {string} uuid the uuid of the unit to move
      * @param {number} newColumnNumber the new column index
-     * @returns {ConcurrentChanges[]} An array of concurrent changes
+     * @returns {Changes[]} An array of changes
      */
     moveUnit(uuid, newColumnNumber) {
         const changes = []
@@ -158,7 +147,7 @@ module.exports = class Field extends Serializable {
                 this.player.consumeMana()
 
                 // add the change
-                changes.push( [ new Change('unitMoved', {uuid}) ] )
+                changes.push( new Change('unitMoved', { uuid }, this.game.serialize()) )
 
                 // create packs
                 const packChanges = this.createPacks(false)
@@ -171,11 +160,11 @@ module.exports = class Field extends Serializable {
 
     /**
      * Reinforce the field with new units
-     * @returns {ConcurrentChanges[]} An array of concurrent changes
+     * @returns {Changes[]} An array of changes
      */
     reinforce() {
         const changes = []
-        const addChanges = []
+        const addedUnitIDs = []
 
         // early out
         if (!this.player.hasMana() || this.player.reinforcement === 0) {
@@ -185,46 +174,23 @@ module.exports = class Field extends Serializable {
         // consume mana
         this.player.consumeMana()
 
-        let fieldFull = false
-        while (this.player.reinforcement > 0 && !fieldFull) {
-            // create unit
-            const elitesOnGrid = this.grid.reduce((acc1, column) => {
-                return acc1 + column.reduce((acc2, unit) => {
-                    return acc2 + (unit.type === 'elite' ? 1 : 0)
-                }, 0)
-            }, 0)
-            const nbEliteAllowed = this.player.nbEliteAllowed
-            const eliteProba = (nbEliteAllowed - elitesOnGrid) / nbEliteAllowed * EliteProbability
-            const unitType = (Math.random() < eliteProba) ? 'elite' : 'normal'
-            const unitColor = this.player.factionColors[Math.floor(Math.random() * this.player.factionColors.length)]
-            const unit = this.instanciateUnit(unitType, unitColor)
-
-            // determine unit location
-            const possibleColumns = this.grid.filter((column, index) => {
-                return unit.size <= this.getFreeSpace(index)
-            })
-
-            if (possibleColumns.length > 0) {
-                // pick random column
-                const column = possibleColumns[Math.floor(Math.random() * possibleColumns.length)]
-                
-                // put the unit in column
-                column.push(unit)
-
+        while (this.player.reinforcement > 0) {
+            const createdUnit = this.createUnit()
+            if (createdUnit !== null) {
                 // decrement reinforcement
                 this.player.reinforcement--
 
                 // manage changes
-                addChanges.push(new Change('unitAdded', {uuid: unit.uuid}))
+                addedUnitIDs.push(createdUnit.uuid)
             }
             else {
-                fieldFull = true
+                break
             }
         }
 
-        // create packs (TODO : should not create packs automatically)
-        const packChanges = this.createPacks(false)
-        changes.push(addChanges, ...packChanges)
+        if (addedUnitIDs.length > 0) {
+            changes.push( new Change('unitsAdded', { units: addedUnitIDs }, this.game.serialize()) )
+        }
 
         return changes
     }
@@ -235,23 +201,36 @@ module.exports = class Field extends Serializable {
 
     /**
      * Evolves all attack packs & launch attacks if necessary
-     * @returns {ConcurrentChanges[]} An array of concurrent changes (each of which contains 1 change : the attack infos)
+     * @returns {Changes[]} An array of changes (each of which contains infos about the attacks)
      */
     evolvePacks() {
         const changes = []
+        const evolvedPacks = []
 
-        // evolve all packs and perform attacks
+        // evolve all packs
         this.grid.forEach(column => {
             column.forEach(unit => {
                 if (unit.packed) {
                     // evolve the unit
                     unit.evolve()
 
-                    // attack if necessary
-                    if (unit.attackDelay <= 0) {
-                        const attackChanges = this.attack(column, unit)
-                        changes.push(...attackChanges)
-                    }
+                    // store the uuid of evolved pack
+                    evolvedPacks.push(unit.uuid)
+                }
+            })
+        })
+
+        // add a change for the packs evolved
+        if (evolvedPacks.length > 0) {
+            changes.push(new Change('attackPackEvolved', { packs: evolvedPacks }, this.game.serialize()))
+        }
+
+        // perform attacks if any
+        this.grid.forEach(column => {
+            column.forEach(unit => {
+                if (unit.packed && unit.attackDelay <= 0) {
+                    const attackChanges = this.attack(column, unit)
+                    changes.push(...attackChanges)
                 }
             })
         })
@@ -262,7 +241,7 @@ module.exports = class Field extends Serializable {
     /**
      * Create all attack packs & all walls on the field
      * @param {boolean} gainMana tells if mana should be gained in case of pack created
-     * @returns {ConcurrentChanges[]} An array of concurrent changes (each of which contains the changes related to the formed pack)
+     * @returns {Changes[]} An array of changes (each of which contains the infos related to the formed pack)
      */
     createPacks(gainMana) {
         const changes = []
@@ -274,7 +253,7 @@ module.exports = class Field extends Serializable {
     /**
      * Create all attack packs on the field
      * @param {boolean} gainMana tells if mana should be gained in case of pack created
-     * @returns {ConcurrentChanges[]} An array of concurrent changes (each of which contains 1 change : the created attack pack)
+     * @returns {Changes[]} An array of changes (each of which contains infos about the created attack pack)
      */
     createAttackPacks(gainMana) {
         const changes = []
@@ -320,7 +299,7 @@ module.exports = class Field extends Serializable {
                         }
 
                         // add the change
-                        changes.push( [ new Change('attackPackFormed', {uuid: packedUnit.uuid}) ] )
+                        changes.push( new Change('attackPackFormed', { uuid: packedUnit.uuid }) )
 
                         // need to check again the column
                         columnDone = false
@@ -339,7 +318,7 @@ module.exports = class Field extends Serializable {
     /**
      * Create all walls on the field
      * @param {boolean} gainMana tells if mana should be gained in case of pack created
-     * @returns {ConcurrentChanges[]} An array of concurrent changes (each of which contains the list of created/evolved walls)
+     * @returns {Changes[]} An array of changes (each of which contains the infos of created/moved walls)
      */
     createDefensePacks(gainMana) {
         const changes = []
@@ -402,49 +381,77 @@ module.exports = class Field extends Serializable {
      * @param {Unit[]} similarUnits Array of similar units
      * @param {number} firstColumnId the column of the 1st unit in the similarUnits array
      * @param {boolean} gainMana tells if mana should be gained in case of pack created
-     * @returns {ConcurrentChanges[]} An array of concurrent changes (which contains the list of created/evolved walls)
+     * @returns {Changes[]} If walls to create, the array of changes (which contain the list of created/moved walls), otherwise empty array
      */
     checkForWalls(similarUnits, firstColumnId, gainMana) {
         const changes = []
 
+        // if stack is found...
         if (similarUnits.length >= CONFIG.STACK_NUMBER) {
-            const wallCreateChanges = []
-            const wallMergeChanges = []
-
-            // if stack is found, transform all idle units into walls
+            // ...transform all idle units into walls
+            const createdWalls = []
+            const createdWallsInfos = []
             similarUnits.forEach((unitToRemove, idx) => {
                 const column = this.grid[firstColumnId + idx]
-    
-                // remove old unit
-                const indexToRemove = column.indexOf(unitToRemove)
-                column.splice(indexToRemove, 1)
-    
+                
                 // create a new wall
                 const wall = new Wall(unitToRemove.faction)
-    
+                
+                // replace unit by wall
+                const indexToRemove = column.indexOf(unitToRemove)
+                column.splice(indexToRemove, 1, wall)
+                
+                // store the infos of the created wall
+                createdWallsInfos.push({ unitRemoved: unitToRemove.uuid, wallCreated: wall.uuid })
+                createdWalls.push(wall)
+            })
+            
+            // fill the changes list
+            changes.push(new Change('wallsFormed', createdWallsInfos, this.game.serialize()))
+
+            // ...and move them to the first row (merge if already a wall)
+            const movedWallsInfos = []
+            similarUnits.forEach((unitToRemove, idx) => {
+                const column = this.grid[firstColumnId + idx]
+                const createdWall = createdWalls[idx]
+
+                // if the created wall is already at first row, nothing to do
+                if (column[0] === createdWall) {
+                    return
+                }
+
+                // the first row is another wall -> need to merge the created wall into it
                 if (column[0] instanceof Wall) {
+                    // remove the just added wall
+                    const indexToRemove = column.indexOf(createdWall)
+                    column.splice(indexToRemove, 1)
+
                     // evolve the existing wall
-                    column[0].incStrength(wall.strength)
+                    column[0].incStrength(createdWall.strength)
 
                     // increment reinforcement as the unit has been removed
                     this.player.reinforcement++
     
                     // add the change
-                    wallCreateChanges.push(new Change('wallFormed', {uuid: wall.uuid, oldUnit: unitToRemove.uuid}))
-                    wallMergeChanges.push(new Change('wallMerged', {oldWall: column[0].uuid, newWall: wall.uuid}))
+                    movedWallsInfos.push({ movedWall: createdWall.uuid, mergedWall: column[0].uuid })
                 }
+                // last case : the fisrt row is NOT a wall -> need to move the created wall to 1st row
                 else {
-                    // add the wall
-                    column.unshift(wall)
+                    // remove the just added wall
+                    const indexToRemove = column.indexOf(createdWall)
+                    column.splice(indexToRemove, 1)
+
+                    // add it back to the first row
+                    column.unshift(createdWall)
     
                     // add the change
-                    wallCreateChanges.push(new Change('wallFormed', {uuid: wall.uuid, oldUnit: unitToRemove.uuid}))
+                    movedWallsInfos.push({ movedWall: createdWall.uuid })
                 }
             })
-
-            changes.push(wallCreateChanges)
-            if (wallMergeChanges.length > 0) {
-                changes.push(wallMergeChanges)
+            
+            // fill the changes list
+            if (movedWallsInfos.length) {
+                changes.push(new Change('wallsMoved', movedWallsInfos, this.game.serialize()))
             }
 
             // mana bonus
@@ -460,14 +467,15 @@ module.exports = class Field extends Serializable {
      * Performs an attack with the given unit
      * @param {Unit[]} column the column of the attack
      * @param {Unit} unit the attacking unit
-     * @returns {ConcurrentChanges[]} An array of 1 concurrent changes (which contains 1 change : the attack infos)
+     * @returns {Changes[]} An array of 1 change (which contains the attack infos)
      */
     attack(column, unit) {
-        const deletedUnits = []
+        const deletedUnitsUUID = []
+        const ennemyField = this.game[this.game.getEnnemyField(this.name)]
 
         // get other player's corresponding column
-        const colId = this.grid.indexOf(column)
-        const ennemyColumn = this.ennemyField.grid[colId]
+        const columnId = this.grid.indexOf(column)
+        const ennemyColumn = ennemyField.grid[columnId]
 
         // attack
         while(unit.strength > 0 && ennemyColumn.length) {
@@ -478,60 +486,115 @@ module.exports = class Field extends Serializable {
             if (ennemyColumn[0].strength <= 0) {
                 // delete the ennemy unit
                 const unitToDelete = ennemyColumn[0]
-                this.ennemyField.transferUnitBack(unitToDelete, ennemyColumn)
+                ennemyField.transferUnitBack(unitToDelete, ennemyColumn)
 
-                deletedUnits.push(unitToDelete.uuid)
+                deletedUnitsUUID.push(unitToDelete.uuid)
             }
         }
 
         // deal ennemy damage if necessary
         if (unit.strength > 0) {
-            this.ennemyField.player.takeDamage(unit.strength)
+            ennemyField.player.takeDamage(unit.strength)
         }
 
         // remove unit
         this.transferUnitBack(unit, column)
 
-        return [ [ new Change('attack', { attackerUUID: unit.uuid, deletedUnits}) ] ]
+        const changeArgs = {
+            columnId,
+            attackerUUID: unit.uuid,
+            deletedUnitsUUID,
+            damageDone: unit.strength
+        }
+        return [ new Change('attack', changeArgs, this.game.serialize()) ]
     }
 
     
     // Helpers
     //=======================================
     
-    initUnits() {
-        for (let i = 0; i < this.player.factionStats.startingUnits; i++) {
-            // create unit
-            const elitesOnGrid = this.grid.reduce((acc1, column) => {
-                return acc1 + column.reduce((acc2, unit) => {
-                    return acc2 + (unit.type === 'elite' ? 1 : 0)
-                }, 0)
+    createUnit() {
+        // compute the probability for an elite to be created
+        const elitesOnGrid = this.grid.reduce((acc1, column) => {
+            return acc1 + column.reduce((acc2, unit) => {
+                return acc2 + (unit.type === 'elite' ? 1 : 0)
             }, 0)
-            const nbEliteAllowed = this.player.nbEliteAllowed
-            const eliteProba = (nbEliteAllowed - elitesOnGrid) / nbEliteAllowed * EliteProbability
-            const unitType = (Math.random() < eliteProba) ? 'elite' : 'normal'
-            const unitColor = this.player.factionColors[Math.floor(Math.random() * this.player.factionColors.length)]
-            const unit = this.instanciateUnit(unitType, unitColor)
+        }, 0)
+        const nbEliteAllowed = this.player.nbEliteAllowed
+        const eliteProba = (nbEliteAllowed - elitesOnGrid) / nbEliteAllowed * EliteProbability
 
-            // determine unit location
-            const possibleColumns = this.grid.filter((column, index) => {
-                return unit.size <= this.getFreeSpace(index)
+        // compute infos for each columns and filter out full ones
+        const possibleColumns = this.grid.map((column, colIndex) => {
+            const freeSpace = this.getFreeSpace(colIndex)
+            const elitePossible = freeSpace >= 2
+
+            // get the surrounding colors
+            const surroundingColors = []
+            const realRow = CONFIG.HEIGHT - freeSpace
+            if (freeSpace > 0) {
+                if (realRow > 0) {
+                    const bottomUnit = this.getUnitAt(colIndex, realRow-1)
+                    if (bottomUnit) {
+                        surroundingColors.push(bottomUnit.color)
+                    }
+                }
+                if (colIndex > 0) {
+                    const leftUnit = this.getUnitAt(colIndex-1, realRow)
+                    if (leftUnit) {
+                        surroundingColors.push(leftUnit.color)
+                    }
+                }
+                if (colIndex < CONFIG.WIDTH - 1) {
+                    const rightUnit = this.getUnitAt(colIndex+1, realRow)
+                    if (rightUnit) {
+                        surroundingColors.push(rightUnit.color)
+                    }
+                }
+            }
+
+            // compute the possible colors (colors not in surroundingColors)
+            const possibleColors = this.player.factionColors.filter(color => {
+                return surroundingColors.indexOf(color) === -1
             })
 
-            if (possibleColumns.length > 0) {
-                // pick random column
-                const column = possibleColumns[Math.floor(Math.random() * possibleColumns.length)]
-                
-                // put the unit in column
-                column.push(unit)
+            return {
+                column,
+                hasFreeSpace: freeSpace > 0,
+                elitePossible,
+                possibleColors
             }
-            else {
+        })
+        .filter(colInfos => {
+            return colInfos.hasFreeSpace
+        })
+
+        let createdUnit = null
+        if (possibleColumns.length > 0) {
+            // pick random column
+            const columnInfos = possibleColumns[Math.floor(Math.random() * possibleColumns.length)]
+            
+            // select units infos
+            let unitType = 'normal'
+            if (columnInfos.elitePossible) {
+                unitType = (Math.random() < eliteProba) ? 'elite' : 'normal'
+            }
+            const unitColor = columnInfos.possibleColors[Math.floor(Math.random() * columnInfos.possibleColors.length)]
+            
+            // create the unit and put it in the column
+            createdUnit = this.instanciateUnit(unitType, unitColor)
+            columnInfos.column.push(createdUnit)
+        }
+        
+        return createdUnit
+    }
+
+    initUnits() {
+        for (let i = 0; i < this.player.factionStats.startingUnits; i++) {
+            const createdUnit = this.createUnit()
+            if (createdUnit === null) {
                 break
             }
         }
-
-        // create packs (TODO : should not create packs automatically)
-        this.createPacks(false)
     }
 
     getUnitInfos(uuid) {
