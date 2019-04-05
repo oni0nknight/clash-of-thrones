@@ -42,6 +42,7 @@ const Home = () => {
             // If valid, update the game context
             gameContext.playerName = playerName
             gameContext.faction = faction
+            gameContext.isHost = e.target.dataset['action'] === 'host'
             const path = e.target.dataset['action']
 
             client.query('register', { name: playerName, faction }).then(() => {
