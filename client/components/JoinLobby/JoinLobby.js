@@ -20,15 +20,18 @@ const JoinLobby = () => {
             return client.query('pendingGames').then((games) => {
                 // Set the list of pending games
                 setPendingGames(games)
+
+                // Update the currently selected game if needed
+                if (pendingGameId === '') {
+                    // Try context first, then the 1st game of the list
+                    const newGameId = gameContext.gameId || (games[0] && games[0].id) || ''
+                    setPendingGameId(newGameId)
+                }
             })
         }
 
         // Initialize the pending games list
-        refreshPendingGames().then(() => {
-            // Set the currently selected game
-            const initGameId = gameContext.gameId || (pendingGames[0] && pendingGames[0].id) || ''
-            setPendingGameId(initGameId)
-        })
+        refreshPendingGames()
 
         // Subscribe to game list updates
         client.subscribe('gameListUpdated', refreshPendingGames)
