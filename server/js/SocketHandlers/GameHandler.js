@@ -12,41 +12,14 @@ module.exports = class GameHandler {
     }
 
     bindSockets() {
-        this.joinGame = this.joinGame.bind(this)
         this.leaveGame = this.leaveGame.bind(this)
 
-        this.socket.on('joinGame', this.joinGame)
         this.socket.on('leaveGame', this.leaveGame)
     }
 
 
     // Socket functions
     //===================================
-
-    joinGame(gameId) {
-        Logger.log(this.socket.id, 'requesting to join game ' + gameId)
-        const context = this.getReqContext()
-        if (!context) {
-            return
-        }
-
-        const game = this.games.find(g => g.id === gameId)
-        if (game && !this.hasGame() && game.playerId !== null && this.players[game.playerId])
-        {
-            Logger.log(this.socket.id, 'joining the game ' + gameId)
-
-            // join the game
-            game.joinedPlayerId = this.socket.id
-            this.players[this.socket.id].gameId = game.id
-            
-            // notify both players that the game is ready
-            this.socket.emit('gameReady')
-            this.players[game.playerId].socket.emit('gameReady')
-        }
-        else {
-            helpers.sendError(this.socket, '1002')
-        }
-    }
 
     leaveGame() {
         Logger.log(this.socket.id, 'requesting to leave game')

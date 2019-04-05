@@ -8,7 +8,7 @@ import { GameContext } from '../../context/GameContext'
 
 const HostLobby = () => {
     const [gameName, setGameName] = useState('')
-    const [redirect, setRedirect] = useState(null)
+    const [redirect, setRedirect] = useState(false)
 
     const client = useContext(ClientContext)
     const gameContext = useContext(GameContext)
@@ -24,10 +24,10 @@ const HostLobby = () => {
 
         // Check validity of the form
         if (formRef.current.checkValidity()) {
-            // If valid, update the game context
-            gameContext.gameName = gameName
+            client.query('createGame', gameName).then((game) => {
+                // Update the game context
+                gameContext.gameId = game.id
 
-            client.query('createGame', gameName).then(() => {
                 // Redirect to next page
                 setRedirect(true)
             }).catch((error) => {

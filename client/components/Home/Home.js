@@ -22,7 +22,8 @@ const Home = () => {
             setFactions(allFactions)
 
             // Set the currently selected faction
-            setFaction(gameContext.faction || allFactions[0].id)
+            const initFaction = gameContext.faction || (allFactions[0] && allFactions[0].id) || ''
+            setFaction(initFaction)
         })
 
         // Init the player name from the context

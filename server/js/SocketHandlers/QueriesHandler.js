@@ -21,6 +21,8 @@ module.exports = class QueriesHandler {
         this.getPlayers = this.getPlayers.bind(this)
         this.getGameState = this.getGameState.bind(this)
         this.createGame = this.createGame.bind(this)
+        this.joinGame = this.joinGame.bind(this)
+        // this.leaveGame = this.leaveGame.bind(this)
 
         this.socket.on('register', this.register)
         this.socket.on('pendingGames', this.getPendingGames)
@@ -28,6 +30,8 @@ module.exports = class QueriesHandler {
         this.socket.on('players', this.getPlayers)
         this.socket.on('gameState', this.getGameState)
         this.socket.on('createGame', this.createGame)
+        this.socket.on('joinGame', this.joinGame)
+        // this.socket.on('leaveGame', this.leaveGame)
     }
 
 
@@ -129,10 +133,39 @@ module.exports = class QueriesHandler {
             this.io.emit('gameListUpdated')
 
             // validate the creation
-            this.socket.emit('createGame_response')
+            this.socket.emit('createGame_response', {
+                id: game.id,
+                gameName: game.gameName,
+                playerName: game.playerName
+            })
         }
         else {
             helpers.replyError(this.socket, 'createGame', '1001')
+        }
+    }
+
+    joinGame(gameId) {
+        Logger.log(this.socket.id, 'requesting to join game ' + gameId)
+        if (!this.playerExists()) {
+            helpers.replyError(this.socket, 'joinGame', '0001')
+            return
+        }
+
+        const game = this.games.find(g => g.id === gameId)
+        if (game && !this.hasGame() && game.playerId !== null && this.players[game.playerId])
+        {
+            Logger.log(this.socket.id, 'joining the game ' + gameId)
+
+            // join the game
+            game.joinedPlayerId = this.socket.id
+            this.players[this.socket.id].gameId = game.id
+            
+            // notify both players that the game is ready
+            this.socket.emit('joinGame_response')
+            this.players[game.playerId].socket.emit('gameReady')
+        }
+        else {
+            helpers.replyError(this.socket, 'joinGame', '1002')
         }
     }
 

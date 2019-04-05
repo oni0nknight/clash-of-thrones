@@ -5,7 +5,8 @@ export const GameContext = React.createContext()
 
 const game = {
     playerName: '',
-    faction: ''
+    faction: '',
+    gameId: ''
 }
 export const GameProvider = (props) => (
     <GameContext.Provider value={game}>
