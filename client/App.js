@@ -1,19 +1,31 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
+import { BrowserRouter as Router, Route, Switch } from 'react-router-dom'
 
 import Header from './components/Header/Header'
 import Container from './components/Container/Container'
 import Home from './components/Home/Home'
+import HostLobby from './components/HostLobby/HostLobby'
+import JoinLobby from './components/JoinLobby/JoinLobby'
 
 import { ClientProvider } from './context/ClientContext'
+import { GameProvider } from './context/GameContext'
 
 const App = () => {
     return (
         <ClientProvider>
-            <Header />
-            <Container>
-                <Home />
-            </Container>
+            <GameProvider>
+                <Header />
+                <Container>
+                    <Router>
+                        <Switch>
+                            <Route exact path="/" component={Home} />
+                            <Route path="/host" component={HostLobby} />
+                            <Route path="/join" component={JoinLobby} />
+                        </Switch>
+                    </Router>
+                </Container>
+            </GameProvider>
         </ClientProvider>
     )
 }

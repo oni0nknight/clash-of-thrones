@@ -1,4 +1,5 @@
 const express = require('express')
+const path = require('path')
 const app = express()
 const server = require('http').Server(app)
 const io = require('socket.io').listen(server)
@@ -16,9 +17,9 @@ const SERVER_PORT = 8080
 //=================================================
 
 // express routing for client serving
-app.use(express.static(__dirname + '/../client/dist'))
-app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/../client/dist/index.html')
+app.use(express.static(path.join(__dirname + '/../client/dist')))
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname + '/../client/dist/index.html'))
 })
 
 // express routing for the test route (useful during dev)
