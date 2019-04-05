@@ -4,89 +4,10 @@
         <meta charset="utf-8">
         <link rel="stylesheet" type="text/css" href="vendors/bootstrap/css/bootstrap.min.css">
         <link rel="stylesheet" type="text/css" href="./style.scss">
-        <script src="./App.js"></script>
     </head>
  
     <body oncontextmenu="return false">
-        <div id="header" class="jumbotron text-center">
-            <h1>Clash of Thrones</h1>
-            <p>Welcome to Clash of Thrones!</p>
-        </div>
-
-        <div class="container-fluid">
-            <!-- INIT VIEW -->
-            <form id="init-form" class='state' novalidate>
-                <div class="form-group">
-                    <label for="playerName">Player name</label>
-                    <input type="text" id="playerName" class="form-control" placeholder="Player name" required>
-                    <div class="invalid-feedback">
-                        Please choose a name.
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="factionSelect">Faction</label>
-                    <select class="form-control" id="factionSelect" required></select>
-                    <div class="invalid-feedback">
-                        Please choose a faction.
-                    </div>
-                </div>
-                <button type="button" id="host-btn" data-type="submit" data-action="host" class="btn btn-primary">Host a game</button>
-                <button type="button" id="join-btn" data-type="submit" data-action="join" class="btn btn-default">Join a game</button>
-            </form>
-
-            <!-- HOST LOBBY VIEW -->
-            <form id="host-lobby-form" class='state' novalidate>
-                <div class="form-group">
-                    <button type="button" data-type="static" data-action="back" class="btn btn-default">Go back</button>
-                </div>
-                <div class="form-group">
-                    <label for="gameName">Game name</label>
-                    <input type="text" id="gameName" class="form-control" placeholder="Game name" required>
-                    <div class="invalid-feedback">
-                        Please choose a name.
-                    </div>
-                </div>
-                <button type="button" id="create-btn" data-type="submit" data-action="create-game" class="btn btn-primary">Create</button>
-            </form>
-
-            <!-- JOIN LOBBY VIEW -->
-            <form id="join-lobby-form" class='state'  novalidate>
-                <div class="form-group">
-                    <button type="button" data-type="static" data-action="back" class="btn btn-default">Go back</button>
-                </div>
-                <div class="form-group">
-                    <label for="gameSelect">Select a game</label>
-                    <select class="form-control" id="gameSelect" required></select>
-                    <div class="invalid-feedback">
-                        Please choose a game to join.
-                    </div>
-                </div>
-                <button type="button" id="join-btn" data-type="submit" data-action="join-game" class="btn btn-primary">Join game</button>
-            </form>
-
-            <!-- HOST WAITING VIEW -->
-            <div id="host-wait" class="state">
-                <div class="form-group">
-                    <button type="button" data-type="static" data-action="back" class="btn btn-default">Go back</button>
-                </div>
-                <h3>Waiting for another player...</h3>
-                <div class="loader"></div>
-            </div>
-
-            <!-- JOIN WAITING VIEW -->
-            <div id="join-wait" class="state">
-                <h3>Waiting for game start...</h3>
-                <div class="loader"></div>
-            </div>
-
-            <!-- LOADER VIEW -->
-            <div id="loader" class="state loader"></div>
-
-            <!-- GAME -->
-            <div id="game-container" class="state"></div>
-
-            <!-- ERRORS -->
-            <div class="error-container"></div>
-        </div>
+        <div id='app'></div>
+        <script src="./App.js"></script>
     </body>
 </html>
