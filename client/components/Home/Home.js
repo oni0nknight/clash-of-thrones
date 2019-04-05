@@ -41,9 +41,15 @@ const Home = () => {
             // If valid, update the game context
             gameContext.playerName = playerName
             gameContext.faction = faction
+            const path = e.target.dataset['action']
 
-            // Redirect to the right page
-            setRedirectPath(`/${e.target.dataset['action']}`)
+            client.query('register', { name: playerName, faction }).then(() => {
+                // Redirect to the right page
+                setRedirectPath(`/${path}`)
+            }).catch((error) => {
+                // Redirect to the right page
+                setRedirectPath('/error')
+            })
         }
     }, [playerName, faction])
 

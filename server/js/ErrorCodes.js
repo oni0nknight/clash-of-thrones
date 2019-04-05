@@ -18,6 +18,7 @@ const errors =
     '1004' : 'Your game is not complete. Wait for another player to join.',
     '1005' : 'Unauthorized. It is not your turn to play.',
     '1006' : 'Unauthorized. Please start your game first.',
+    '1007' : 'The game is not started',
 
     // Start game
     '1101' : 'Cannot start the game. The game is already started.',

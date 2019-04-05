@@ -17,19 +17,22 @@ export default class Client {
         return new Promise((resolve, reject) => {
             let timeout = 0
 
-            const handleResponse = result => {
+            const handleResponse = (result) => {
                 this.unsubscribe(eventName+'_response', handleResponse)
+                this.unsubscribe(eventName+'_error', handleError)
                 clearTimeout(timeout)
                 resolve(result)
             }
-            const handleError = () => {
+            const handleError = (error) => {
                 this.unsubscribe(eventName+'_response', handleResponse)
+                this.unsubscribe(eventName+'_error', handleError)
                 clearTimeout(timeout)
-                reject()
+                reject(error)
             }
 
             // subscribe to response handler
             this.subscribe(eventName+'_response', handleResponse)
+            this.subscribe(eventName+'_error', handleError)
 
             // emit the query
             this.socket.emit(eventName, args)

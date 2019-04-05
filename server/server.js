@@ -4,7 +4,6 @@ const app = express()
 const server = require('http').Server(app)
 const io = require('socket.io').listen(server)
 
-const LifecycleHandler = require('./js/SocketHandlers/LifecycleHandler')
 const QueriesHandler = require('./js/SocketHandlers/QueriesHandler')
 const GameHandler = require('./js/SocketHandlers/GameHandler')
 const PlayHandler = require('./js/SocketHandlers/PlayHandler')
@@ -54,9 +53,6 @@ const players = {}
 io.on('connection', socket =>
 {
     Logger.log(socket.id, 'new connection !')
-
-    const lifecycleHandler = new LifecycleHandler(io, socket, players, games)
-    lifecycleHandler.bindSockets()
 
     const queriesHandler = new QueriesHandler(io, socket, players, games)
     queriesHandler.bindSockets()

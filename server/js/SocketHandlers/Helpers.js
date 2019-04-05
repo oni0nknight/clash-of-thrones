@@ -16,6 +16,16 @@ const Helpers = {
             msg: errorMsg
         })
     },
+
+    replyError(socket, query, errorCode) {
+        const errorMsg = ErrorCodes.get(errorCode)
+        Logger.error(socket.id, 'ERROR => ' + errorMsg)
+        
+        socket.emit(query + '_error', {
+            code: errorCode,
+            msg: errorMsg
+        })
+    },
     
     generateUUID() {
         return 'xxxxxxxx-game-xxxxxxxx'.replace(/[x]/g, () => {

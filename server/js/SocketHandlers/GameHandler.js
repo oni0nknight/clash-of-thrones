@@ -12,11 +12,9 @@ module.exports = class GameHandler {
     }
 
     bindSockets() {
-        this.createGame = this.createGame.bind(this)
         this.joinGame = this.joinGame.bind(this)
         this.leaveGame = this.leaveGame.bind(this)
 
-        this.socket.on('createGame', this.createGame)
         this.socket.on('joinGame', this.joinGame)
         this.socket.on('leaveGame', this.leaveGame)
     }
@@ -24,43 +22,6 @@ module.exports = class GameHandler {
 
     // Socket functions
     //===================================
-
-    createGame(gameName){
-        Logger.log(this.socket.id, 'requesting to create game ' + gameName)
-        const context = this.getReqContext()
-        if (!context) {
-            return
-        }
-
-        if (!this.hasGame()) {
-            Logger.log(this.socket.id, 'creating the game ' + gameName)
-
-            // create the game
-            const game = {
-                id: helpers.generateUUID(),
-                playerId: this.socket.id,
-                playerName: this.players[this.socket.id].name,
-                gameName,
-                joinedPlayerId: null,
-                gameInstance: null
-            }
-
-            // add it to games list
-            this.games.push(game)
-
-            // add a reference to it in player structure
-            this.players[this.socket.id].gameId = game.id
-
-            // notify all the players
-            this.io.emit('gameListUpdated')
-
-            // validate the creation
-            this.socket.emit('gameCreated')
-        }
-        else {
-            helpers.sendError(this.socket, '1001')
-        }
-    }
 
     joinGame(gameId) {
         Logger.log(this.socket.id, 'requesting to join game ' + gameId)
