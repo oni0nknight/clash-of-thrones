@@ -15,15 +15,26 @@ const JoinLobby = () => {
     const formRef = useRef(null)
 
     useEffect(() => {
-        // Fetch all pending games from the server
-        client.query('pendingGames').then(games => {
-            // Set the list of pending games
-            setPendingGames(games)
+        const refreshPendingGames = () => {
+            // Fetch all pending games from the server
+            return client.query('pendingGames').then((games) => {
+                // Set the list of pending games
+                setPendingGames(games)
+            })
+        }
 
-            // Set the currently selected faction
-            const initGameId = gameContext.gameId || (games[0] && games[0].id) || ''
+        // Initialize the pending games list
+        refreshPendingGames().then(() => {
+            // Set the currently selected game
+            const initGameId = gameContext.gameId || (pendingGames[0] && pendingGames[0].id) || ''
             setPendingGameId(initGameId)
         })
+
+        // Subscribe to game list updates
+        client.subscribe('gameListUpdated', refreshPendingGames)
+        return () => {
+            client.unsubscribe('gameListUpdated', refreshPendingGames)
+        }
     }, [])
 
     // Form submit handler
