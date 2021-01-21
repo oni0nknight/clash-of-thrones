@@ -24,7 +24,7 @@
     "react-dom": "^16.8.6",
     "react-router-dom": "^5.0.0",
     "sass": "^1.14.1",
-    "socket.io": "^2.1.1"
+    "socket.io": "^2.4.0"
   },
   "devDependencies": {
     "@babel/core": "^7.4.3",
